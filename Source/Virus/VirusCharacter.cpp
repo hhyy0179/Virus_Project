@@ -9,6 +9,8 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "Kismet/GameplayStatics.h"
+#include "Sound/SoundCue.h"
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -18,7 +20,7 @@ AVirusCharacter::AVirusCharacter()
 {
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
-		
+	
 	// Don't rotate when the controller rotates. Let that just affect the camera.
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationYaw = false;
@@ -84,6 +86,8 @@ void AVirusCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInp
 		//Looking
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AVirusCharacter::Look);
 
+		//Scanning
+		EnhancedInputComponent->BindAction(ScanAction, ETriggerEvent::Started, this, &AVirusCharacter::Scan);
 	}
 
 }
@@ -125,5 +129,17 @@ void AVirusCharacter::Look(const FInputActionValue& Value)
 }
 
 
+void AVirusCharacter::Scan(const FInputActionValue& Value)
+{
+	if (Controller != nullptr && FireSound)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Attack"));
 
+		//오디오 소리를 나게 해준다. 
+		UGameplayStatics::PlaySound2D(this, FireSound);
+		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+
+	}
+	
+}
 
