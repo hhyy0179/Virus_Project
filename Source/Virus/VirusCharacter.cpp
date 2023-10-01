@@ -128,7 +128,6 @@ void AVirusCharacter::Look(const FInputActionValue& Value)
 	}
 }
 
-
 void AVirusCharacter::Scan(const FInputActionValue& Value)
 {
 	if (Controller != nullptr && FireSound)
@@ -140,6 +139,17 @@ void AVirusCharacter::Scan(const FInputActionValue& Value)
 		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 
 	}
-	
+	const USkeletalMeshSocket* BarrelSocket = GetMesh()->GetSocketByName("BarrelSocket");
+	if (BarrelSocket)
+	{
+		//소켓의 위치 반환
+		const FTransform SocketTransform = BarrelSocket->GetSocketTransform(GetMesh());
+		if (LaserFlash)
+		{
+			//소켓 위치에서 LaserFlash를 스폰하겠다는 의미. 
+			UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), LaserFlash, SocketTransform);
+		}
+	}
 }
+
 
