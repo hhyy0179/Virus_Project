@@ -137,6 +137,12 @@ void AVirusCharacter::Scan(const FInputActionValue& Value)
 		//오디오 소리를 나게 해준다. 
 		UGameplayStatics::PlaySound2D(this, FireSound);
 		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+		if (AnimInstance && ScaningMontage)
+		{
+			AnimInstance->Montage_Play(ScaningMontage);
+			AnimInstance->Montage_JumpToSection(FName("Attack"));
+
+		}
 
 	}
 	const USkeletalMeshSocket* BarrelSocket = GetMesh()->GetSocketByName("BarrelSocket");
