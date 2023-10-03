@@ -11,6 +11,9 @@
 #include "EnhancedInputSubsystems.h"
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundCue.h"
+
+#include "AIBaseCharacter.h"
+
 #include "DrawDebugHelpers.h"
 
 #include "AIBaseCharacter.h"
@@ -200,28 +203,9 @@ void AVirusCharacter::Scan(const FInputActionValue& Value)
 		}
 	}
 
-	FHitResult OutHit;
-	FVector Start = FollowCamera->GetComponentLocation();
-	FVector ForwardVector = FollowCamera->GetForwardVector();
-	FVector End = ((ForwardVector * 5000.f) + Start);
-	FCollisionQueryParams CollisionParams;
+	
 
-	DrawDebugLine(GetWorld(), Start, End, FColor::Green, false, 1, 0, 1);
 
-	if (GetWorld()->LineTraceSingleByChannel(OutHit, Start, End, ECC_Visibility, CollisionParams))
-	{
-		if (OutHit.bBlockingHit)
-		{
-			if (Cast<AAIBaseCharacter>(OutHit.GetActor())) {
-				AAIBaseCharacter* AI = Cast<AAIBaseCharacter>(OutHit.GetActor());
-				AI->HPCalculate(-10);
-
-				float AIHPPercent = AI->CurrentHP / AI->MaxHP;
-
-				UE_LOG(LogTemp, Warning, TEXT("AI HP: %f"), AIHPPercent);
-			}
-		}
-	}
 }
 
 
