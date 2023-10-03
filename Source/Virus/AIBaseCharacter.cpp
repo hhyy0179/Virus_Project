@@ -5,6 +5,7 @@
 
 #include "Engine/World.h"
 #include "Components/WidgetComponent.h"
+#include "HPBarWidget.h"
 
 // Sets default values
 AAIBaseCharacter::AAIBaseCharacter()
