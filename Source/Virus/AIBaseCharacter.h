@@ -11,8 +11,6 @@ class VIRUS_API AAIBaseCharacter : public ACharacter
 {
 	GENERATED_BODY()
 
-
-
 public:
 	// Sets default values for this character's properties
 	AAIBaseCharacter();
@@ -37,8 +35,8 @@ public:
 	class UWidgetComponent* HPBarWidget;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	int MaxHP = 100;
+	float MaxHP = 100;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	int CurrentHP = 0;
+	float CurrentHP = 0;
 };
