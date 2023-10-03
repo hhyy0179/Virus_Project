@@ -12,6 +12,8 @@
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundCue.h"
 
+#include "AIBaseCharacter.h"
+
 
 //////////////////////////////////////////////////////////////////////////
 // AVirusCharacter
@@ -52,6 +54,34 @@ AVirusCharacter::AVirusCharacter()
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
+
+	static ConstructorHelpers::FObjectFinder<UInputAction>IA_Jump(
+		TEXT("/Game/ThirdPerson/Input/Actions/IA_Jump.IA_Jump"));
+	if (IA_Jump.Succeeded())
+	{
+		JumpAction = IA_Jump.Object;
+	}
+
+	static ConstructorHelpers::FObjectFinder<UInputAction>IA_Look(
+		TEXT("/Game/ThirdPerson/Input/Actions/IA_Look.IA_Look"));
+	if (IA_Look.Succeeded())
+	{
+		LookAction = IA_Look.Object;
+	}
+
+	static ConstructorHelpers::FObjectFinder<UInputAction>IA_Move(
+		TEXT("/Game/ThirdPerson/Input/Actions/IA_Move.IA_Move"));
+	if (IA_Move.Succeeded())
+	{
+		MoveAction = IA_Move.Object;
+	}
+
+	static ConstructorHelpers::FObjectFinder<UInputAction>IA_Scan(
+		TEXT("/Game/ThirdPerson/Input/Actions/IA_Scan.IA_Scan"));
+	if (IA_Scan.Succeeded())
+	{
+		ScanAction = IA_Scan.Object;
+	}
 }
 
 void AVirusCharacter::BeginPlay()
@@ -90,7 +120,6 @@ void AVirusCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInp
 		//Scanning
 		EnhancedInputComponent->BindAction(ScanAction, ETriggerEvent::Started, this, &AVirusCharacter::Scan);
 	}
-
 }
 
 void AVirusCharacter::Move(const FInputActionValue& Value)
@@ -142,10 +171,9 @@ void AVirusCharacter::Scan(const FInputActionValue& Value)
 		{
 			AnimInstance->Montage_Play(ScaningMontage);
 			AnimInstance->Montage_JumpToSection(FName("Attack"));
-
 		}
-
 	}
+
 	const USkeletalMeshSocket* BarrelSocket = GetMesh()->GetSocketByName("BarrelSocket");
 	if (BarrelSocket)
 	{
@@ -157,6 +185,10 @@ void AVirusCharacter::Scan(const FInputActionValue& Value)
 			UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), LaserFlash, SocketTransform);
 		}
 	}
+
+	
+
+
 }
 
 
