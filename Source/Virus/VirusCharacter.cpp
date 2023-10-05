@@ -12,6 +12,12 @@
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundCue.h"
 
+#include "AIBaseCharacter.h"
+
+#include "DrawDebugHelpers.h"
+
+#include "AIBaseCharacter.h"
+
 
 //////////////////////////////////////////////////////////////////////////
 // AVirusCharacter
@@ -52,6 +58,34 @@ AVirusCharacter::AVirusCharacter()
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
+
+	static ConstructorHelpers::FObjectFinder<UInputAction>IA_Jump(
+		TEXT("/Game/ThirdPerson/Input/Actions/IA_Jump.IA_Jump"));
+	if (IA_Jump.Succeeded())
+	{
+		JumpAction = IA_Jump.Object;
+	}
+
+	static ConstructorHelpers::FObjectFinder<UInputAction>IA_Look(
+		TEXT("/Game/ThirdPerson/Input/Actions/IA_Look.IA_Look"));
+	if (IA_Look.Succeeded())
+	{
+		LookAction = IA_Look.Object;
+	}
+
+	static ConstructorHelpers::FObjectFinder<UInputAction>IA_Move(
+		TEXT("/Game/ThirdPerson/Input/Actions/IA_Move.IA_Move"));
+	if (IA_Move.Succeeded())
+	{
+		MoveAction = IA_Move.Object;
+	}
+
+	static ConstructorHelpers::FObjectFinder<UInputAction>IA_Scan(
+		TEXT("/Game/ThirdPerson/Input/Actions/IA_Scan.IA_Scan"));
+	if (IA_Scan.Succeeded())
+	{
+		ScanAction = IA_Scan.Object;
+	}
 }
 
 void AVirusCharacter::BeginPlay()
@@ -90,7 +124,6 @@ void AVirusCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInp
 		//Scanning
 		EnhancedInputComponent->BindAction(ScanAction, ETriggerEvent::Started, this, &AVirusCharacter::Scan);
 	}
-
 }
 
 void AVirusCharacter::Move(const FInputActionValue& Value)
@@ -135,26 +168,61 @@ void AVirusCharacter::Scan(const FInputActionValue& Value)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Attack"));
 
-		//¿Àµð¿À ¼Ò¸®¸¦ ³ª°Ô ÇØÁØ´Ù. 
+		//ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ò¸ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Ø´ï¿½. 
 		UGameplayStatics::PlaySound2D(this, FireSound);
 		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 		if (AnimInstance && ScaningMontage)
 		{
 			AnimInstance->Montage_Play(ScaningMontage);
 			AnimInstance->Montage_JumpToSection(FName("Attack"));
-
 		}
-
 	}
+
 	const USkeletalMeshSocket* BarrelSocket = GetMesh()->GetSocketByName("BarrelSocket");
 	if (BarrelSocket)
 	{
-		//¼ÒÄÏÀÇ À§Ä¡ ¹ÝÈ¯
+		//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ä¡ ï¿½ï¿½È¯
 		const FTransform SocketTransform = BarrelSocket->GetSocketTransform(GetMesh());
 		if (LaserFlash)
 		{
-			//¼ÒÄÏ À§Ä¡¿¡¼­ LaserFlash¸¦ ½ºÆùÇÏ°Ú´Ù´Â ÀÇ¹Ì. 
+			//ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ä¡ï¿½ï¿½ï¿½ï¿½ LaserFlashï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï°Ú´Ù´ï¿½ ï¿½Ç¹ï¿½. 
 			UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), LaserFlash, SocketTransform);
+		}
+
+		FHitResult ScanHit;
+		const FVector Start{ SocketTransform.GetLocation() };
+		const FQuat Rotation{ SocketTransform.GetRotation() };
+		const FVector RotationAxis{ Rotation.GetAxisX() };
+		const FVector End{ Start + RotationAxis* 50'000.f };
+
+		GetWorld()->LineTraceSingleByChannel(ScanHit, Start, End, ECollisionChannel::ECC_Visibility);
+		if (ScanHit.bBlockingHit)
+		{
+			DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 2.f);
+			//DrawDebugLine(GetWorld(), ScanHit.Location, 5.f, FColor::Red, false, 2.f);
+		}
+	}
+
+	FHitResult OutHit;
+	FVector Start = FollowCamera->GetComponentLocation();
+	FVector ForwardVector = FollowCamera->GetForwardVector();
+	FVector End = ((ForwardVector * 5000.f) + Start);
+	FCollisionQueryParams CollisionParams;
+
+	DrawDebugLine(GetWorld(), Start, End, FColor::Green, false, 1, 0, 1);
+
+	if (GetWorld()->LineTraceSingleByChannel(OutHit, Start, End, ECC_Visibility, CollisionParams))
+	{
+		if (OutHit.bBlockingHit)
+		{
+			if (Cast<AAIBaseCharacter>(OutHit.GetActor())) {
+				AAIBaseCharacter* AI = Cast<AAIBaseCharacter>(OutHit.GetActor());
+				AI->HPCalculate(-10);
+
+				float AIHPPercent = AI->CurrentHP / AI->MaxHP;
+
+				UE_LOG(LogTemp, Warning, TEXT("AI HP: %f"), AIHPPercent);
+			}
 		}
 	}
 }
