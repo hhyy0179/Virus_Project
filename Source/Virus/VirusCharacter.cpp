@@ -168,7 +168,6 @@ void AVirusCharacter::Scan(const FInputActionValue& Value)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Attack"));
 
-		//����� �Ҹ��� ���� ���ش�. 
 		UGameplayStatics::PlaySound2D(this, FireSound);
 		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 		if (AnimInstance && ScaningMontage)
@@ -181,11 +180,9 @@ void AVirusCharacter::Scan(const FInputActionValue& Value)
 	const USkeletalMeshSocket* BarrelSocket = GetMesh()->GetSocketByName("BarrelSocket");
 	if (BarrelSocket)
 	{
-		//������ ��ġ ��ȯ
 		const FTransform SocketTransform = BarrelSocket->GetSocketTransform(GetMesh());
 		if (LaserFlash)
 		{
-			//���� ��ġ���� LaserFlash�� �����ϰڴٴ� �ǹ�. 
 			UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), LaserFlash, SocketTransform);
 		}
 
@@ -198,31 +195,15 @@ void AVirusCharacter::Scan(const FInputActionValue& Value)
 		GetWorld()->LineTraceSingleByChannel(ScanHit, Start, End, ECollisionChannel::ECC_Visibility);
 		if (ScanHit.bBlockingHit)
 		{
-			DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 2.f);
-			//DrawDebugLine(GetWorld(), ScanHit.Location, 5.f, FColor::Red, false, 2.f);
-		}
-	}
-
-	FHitResult OutHit;
-	FVector Start = FollowCamera->GetComponentLocation();
-	FVector ForwardVector = FollowCamera->GetForwardVector();
-	FVector End = ((ForwardVector * 5000.f) + Start);
-	FCollisionQueryParams CollisionParams;
-
-	DrawDebugLine(GetWorld(), Start, End, FColor::Green, false, 1, 0, 1);
-
-	if (GetWorld()->LineTraceSingleByChannel(OutHit, Start, End, ECC_Visibility, CollisionParams))
-	{
-		if (OutHit.bBlockingHit)
-		{
-			if (Cast<AAIBaseCharacter>(OutHit.GetActor())) {
-				AAIBaseCharacter* AI = Cast<AAIBaseCharacter>(OutHit.GetActor());
+			if (Cast<AAIBaseCharacter>(ScanHit.GetActor())) {
+				AAIBaseCharacter* AI = Cast<AAIBaseCharacter>(ScanHit.GetActor());
 				AI->HPCalculate(-10);
 
 				float AIHPPercent = AI->CurrentHP / AI->MaxHP;
 
 				UE_LOG(LogTemp, Warning, TEXT("AI HP: %f"), AIHPPercent);
 			}
+			DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 2.f);
 		}
 	}
 }

@@ -10,7 +10,13 @@ UHPBarWidget::UHPBarWidget(const FObjectInitializer& ObjectInitializer)
 {
 }
 
+void UHPBarWidget::NativeConstruct()
+{
+	Super::NativeConstruct();
+
+}
+
 void UHPBarWidget::UpdateHPBar(float Value)
 {
-	//HPBar->SetPercent(Value);
+	HPBar->SetPercent(Value);
 }
