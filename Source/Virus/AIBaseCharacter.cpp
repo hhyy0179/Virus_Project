@@ -50,6 +50,8 @@ void AAIBaseCharacter::HPCalculate(int Value)
 {
 	CurrentHP += Value;
 
+	Cast<UHPBarWidget>(HPBarWidget)->UpdateHPBar(CurrentHP / MaxHP);
+
 	if (CurrentHP == 0) Die();
 	else return;
 }

@@ -16,6 +16,7 @@ class VIRUS_API UHPBarWidget : public UUserWidget
 
 public:
 	UHPBarWidget(const FObjectInitializer& ObjectInitializer);
+	void NativeConstruct();
 
 	UPROPERTY(BlueprintReadWrite, meta=(BindWidget))
 	class UProgressBar* HPBar;
