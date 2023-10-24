@@ -2,7 +2,6 @@
 
 
 #include "HPBarWidget.h"
-
 #include "Components/ProgressBar.h"
 
 UHPBarWidget::UHPBarWidget(const FObjectInitializer& ObjectInitializer)

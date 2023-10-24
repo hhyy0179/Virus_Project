@@ -29,7 +29,7 @@ AVirusCharacter::AVirusCharacter()
 	
 	// Don't rotate when the controller rotates. Let that just affect the camera.
 	bUseControllerRotationPitch = false;
-	bUseControllerRotationYaw = false;
+	bUseControllerRotationYaw = true;
 	bUseControllerRotationRoll = false;
 
 	// Configure character movement
@@ -48,7 +48,7 @@ AVirusCharacter::AVirusCharacter()
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(RootComponent);
 	CameraBoom->TargetArmLength = 400.0f; // The camera follows at this distance behind the character	
-	CameraBoom->bUsePawnControlRotation = true; // Rotate the arm based on the controller
+	CameraBoom->bUsePawnControlRotation = false; // Rotate the arm based on the controller
 	CameraBoom->SocketOffset = FVector(0.f, 50.f, 50.f);
 
 	// Create a follow camera
@@ -168,7 +168,7 @@ void AVirusCharacter::Scan(const FInputActionValue& Value)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Attack"));
 
-		//����� �Ҹ��� ���� ���ش�. 
+
 		UGameplayStatics::PlaySound2D(this, FireSound);
 		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 		if (AnimInstance && ScaningMontage)
@@ -181,49 +181,76 @@ void AVirusCharacter::Scan(const FInputActionValue& Value)
 	const USkeletalMeshSocket* BarrelSocket = GetMesh()->GetSocketByName("BarrelSocket");
 	if (BarrelSocket)
 	{
-		//������ ��ġ ��ȯ
 		const FTransform SocketTransform = BarrelSocket->GetSocketTransform(GetMesh());
-		if (LaserFlash)
-		{
-			//���� ��ġ���� LaserFlash�� �����ϰڴٴ� �ǹ�. 
-			UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), LaserFlash, SocketTransform);
-		}
+		
 
-		FHitResult ScanHit;
+		FVector2D ViewportSize;
+		//GEngine -> global engine pointer: hold viewport
+		if (GEngine && GEngine->GameViewport)
+		{
+			GEngine->GameViewport->GetViewportSize(ViewportSize);
+		}
+		
+		//Get Screen space location of crosshairs
+		FVector2D CrosshairLocation(ViewportSize.X / 2.f, ViewportSize.Y / 2.f);
+		CrosshairLocation.Y -= 50.f;
+		FVector CrosshairWorldPosition;
+		FVector CrosshairWorldDirection;
+
+		bool bScreenToWorld = UGameplayStatics::DeprojectScreenToWorld(UGameplayStatics::GetPlayerController(this, 0), CrosshairLocation, CrosshairWorldPosition, CrosshairWorldDirection);
+
+		if (bScreenToWorld) //was deprojection successful?
+		{
+
+			FHitResult ScreenTraceHit;
+			const FVector Start{ CrosshairWorldPosition };
+			const FVector End{ CrosshairWorldPosition + CrosshairWorldDirection * 50'000.f };
+
+			//set beam end point to line trace end point
+			FVector BeamEndPoint{ End };
+
+			//Trace outward from crosshairs world location
+			GetWorld()->LineTraceSingleByChannel(ScreenTraceHit, Start, End, ECollisionChannel::ECC_Visibility);
+
+			if (ScreenTraceHit.bBlockingHit) //was there a trace hit?
+			{
+				//Beam end point is now trace hit location
+				BeamEndPoint = ScreenTraceHit.Location;
+
+				if (LaserFlash)
+				{
+					UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), LaserFlash, ScreenTraceHit.Location);
+				}
+
+				DrawDebugLine(GetWorld(), Start, BeamEndPoint, FColor::Red, false, 2.f);
+
+				if (Cast<AAIBaseCharacter>(ScreenTraceHit.GetActor())) {
+					AAIBaseCharacter* AI = Cast<AAIBaseCharacter>(ScreenTraceHit.GetActor());
+					AI->HPCalculate(-10);
+
+					float AIHPPercent = AI->CurrentHP / AI->MaxHP;
+
+					UE_LOG(LogTemp, Warning, TEXT("AI HP: %f"), AIHPPercent);
+				}
+			}
+		}
+		/*FHitResult ScanHit;
 		const FVector Start{ SocketTransform.GetLocation() };
 		const FQuat Rotation{ SocketTransform.GetRotation() };
 		const FVector RotationAxis{ Rotation.GetAxisX() };
-		const FVector End{ Start + RotationAxis* 50'000.f };
+		const FVector End{ Start + RotationAxis* 50'000.f }; //pointing in the direction of the barrel
 
-		GetWorld()->LineTraceSingleByChannel(ScanHit, Start, End, ECollisionChannel::ECC_Visibility);
+
+		//ScanHit has stored in it regarding the LineTrace information
+		//if it hit something, return true, if it didn't return false
+		
 		if (ScanHit.bBlockingHit)
 		{
 			DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 2.f);
 			//DrawDebugLine(GetWorld(), ScanHit.Location, 5.f, FColor::Red, false, 2.f);
-		}
-	}
 
-	FHitResult OutHit;
-	FVector Start = FollowCamera->GetComponentLocation();
-	FVector ForwardVector = FollowCamera->GetForwardVector();
-	FVector End = ((ForwardVector * 5000.f) + Start);
-	FCollisionQueryParams CollisionParams;
-
-	DrawDebugLine(GetWorld(), Start, End, FColor::Green, false, 1, 0, 1);
-
-	if (GetWorld()->LineTraceSingleByChannel(OutHit, Start, End, ECC_Visibility, CollisionParams))
-	{
-		if (OutHit.bBlockingHit)
-		{
-			if (Cast<AAIBaseCharacter>(OutHit.GetActor())) {
-				AAIBaseCharacter* AI = Cast<AAIBaseCharacter>(OutHit.GetActor());
-				AI->HPCalculate(-10);
-
-				float AIHPPercent = AI->CurrentHP / AI->MaxHP;
-
-				UE_LOG(LogTemp, Warning, TEXT("AI HP: %f"), AIHPPercent);
-			}
-		}
+			
+		}*/
 	}
 }
 
