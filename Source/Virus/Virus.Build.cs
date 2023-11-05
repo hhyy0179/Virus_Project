@@ -9,5 +9,7 @@ public class Virus : ModuleRules
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
 		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "HeadMountedDisplay", "EnhancedInput", "Sockets", "UMG" });
-	}
+
+        PrivateDependencyModuleNames.AddRange(new string[] { "SlateCore", "Slate" });
+    }
 }

@@ -20,6 +20,7 @@ public:
 	void UpdateAnimationProperties(float DeltaTime);
 
 	//anim instance begin()
+	UFUNCTION(BlueprintCallable)
 	virtual void NativeInitializeAnimation() override;
 
 
@@ -30,7 +31,6 @@ private:
 	/* Velocity of the character */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
 	bool bIsJumping;
-
 
 	/* speed of the character */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
@@ -43,5 +43,4 @@ private:
 	/* Whether or not the character is in the air */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
 	bool bIsAccelerating;
-
 };

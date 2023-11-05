@@ -28,9 +28,9 @@ AVirusCharacter::AVirusCharacter()
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
 	
 	// Don't rotate when the controller rotates. Let that just affect the camera.
-	bUseControllerRotationPitch = false;
+	bUseControllerRotationPitch = true;
 	bUseControllerRotationYaw = true;
-	bUseControllerRotationRoll = false;
+	bUseControllerRotationRoll = true;
 
 	// Configure character movement
 	GetCharacterMovement()->bOrientRotationToMovement = true; // Character moves in the direction of input...	
@@ -59,7 +59,7 @@ AVirusCharacter::AVirusCharacter()
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
 
-	static ConstructorHelpers::FObjectFinder<UInputAction>IA_Jump(
+	/*static ConstructorHelpers::FObjectFinder<UInputAction>IA_Jump(
 		TEXT("/Game/ThirdPerson/Input/Actions/IA_Jump.IA_Jump"));
 	if (IA_Jump.Succeeded())
 	{
@@ -85,7 +85,7 @@ AVirusCharacter::AVirusCharacter()
 	if (IA_Scan.Succeeded())
 	{
 		ScanAction = IA_Scan.Object;
-	}
+	}*/
 }
 
 void AVirusCharacter::BeginPlay()
@@ -109,10 +109,11 @@ void AVirusCharacter::BeginPlay()
 void AVirusCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
 {
 	// Set up action bindings
-	if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent)) {
-		
+	if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent))
+	{
+
 		//Jumping
-		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Triggered, this, &ACharacter::Jump);
+		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &AVirusCharacter::Jump);
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
 
 		//Moving
@@ -123,7 +124,11 @@ void AVirusCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInp
 
 		//Scanning
 		EnhancedInputComponent->BindAction(ScanAction, ETriggerEvent::Started, this, &AVirusCharacter::Scan);
+
+		//Scanning
+		EnhancedInputComponent->BindAction(HealAction, ETriggerEvent::Started, this, &AVirusCharacter::Heal);
 	}
+
 }
 
 void AVirusCharacter::Move(const FInputActionValue& Value)
@@ -162,13 +167,41 @@ void AVirusCharacter::Look(const FInputActionValue& Value)
 	}
 }
 
+void AVirusCharacter::Jump(const FInputActionValue& Value)
+{
+	
+	if (JumpCurrentCount)
+	{
+		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+		if (AnimInstance && DoubleJumpMontage && bisDoubleJump)
+		{
+			FRotator CharacterRotation = GetActorRotation(); // 캐릭터의 현재 회전 방향 가져오기
+			FVector LaunchDirection = CharacterRotation.Vector(); // 회전 방향을 벡터로 변환
+			LaunchDirection.Normalize(); // vector normallize
+			float LaunchStrength = 60.0f; // 힘의 크기 설정
+			LaunchDirection.Z = 10.0f;
+
+			AnimInstance->Montage_Play(DoubleJumpMontage);
+			AnimInstance->Montage_JumpToSection(FName("DoubleJump"));
+
+			LaunchCharacter(LaunchDirection * LaunchStrength, false, false);
+			bisDoubleJump = false;
+		}
+	}
+	else
+	{
+		ACharacter::Jump();
+		bisDoubleJump = true;
+	}
+}
+
+
 void AVirusCharacter::Scan(const FInputActionValue& Value)
 {
 	if (Controller != nullptr && FireSound)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Attack"));
-
-
+		
 		UGameplayStatics::PlaySound2D(this, FireSound);
 		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 		if (AnimInstance && ScaningMontage)
@@ -234,6 +267,7 @@ void AVirusCharacter::Scan(const FInputActionValue& Value)
 				}
 			}
 		}
+
 		/*FHitResult ScanHit;
 		const FVector Start{ SocketTransform.GetLocation() };
 		const FQuat Rotation{ SocketTransform.GetRotation() };
@@ -251,6 +285,22 @@ void AVirusCharacter::Scan(const FInputActionValue& Value)
 
 			
 		}*/
+	}
+}
+
+void AVirusCharacter::Heal(const FInputActionValue& Value)
+{
+
+	const USkeletalMeshSocket* HealVFXSocket = GetMesh()->GetSocketByName("HealVFX");
+	if (HealVFXSocket)
+	{
+		const FTransform HealVFXSocketTransform = HealVFXSocket->GetSocketTransform(GetMesh());
+
+		if (HealingVFX)
+		{
+			UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), HealingVFX, HealVFXSocketTransform);
+		}
+
 	}
 }
 

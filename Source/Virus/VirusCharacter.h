@@ -41,6 +41,13 @@ class AVirusCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* ScanAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* HealAction;
+
+	/** Montage for double jump */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UAnimMontage* DoubleJumpMontage;
+
 	/** Scan Shot Sound cue*/
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class USoundCue* FireSound;
@@ -52,6 +59,17 @@ class AVirusCharacter : public ACharacter
 	/** Montage for attack using the weapon */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
 	class UAnimMontage* ScaningMontage;
+
+	/** Flash spawned at BarrelSocket */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Healing, meta = (AllowPrivateAccess = "true"))
+	class UParticleSystem* HealingVFX;
+
+	/** Montage for attack using the weapon */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Healing, meta = (AllowPrivateAccess = "true"))
+	class UAnimMontage* HealingMontage;
+
+	bool bisDoubleJump = false;
+	
 
 public:
 	AVirusCharacter();
@@ -65,10 +83,16 @@ protected:
 	/** Called for looking input */
 	void Look(const FInputActionValue& Value);
 
+	/** Called for movement input */
+	void Jump(const FInputActionValue& Value);
+
 	/** Called for Shooting input */
 	void Scan(const FInputActionValue& Value);
-			
 
+	/** Called for Healing input */
+	void Heal(const FInputActionValue& Value);
+
+			
 protected:
 	// APawn interface
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
