@@ -3,6 +3,7 @@
 #include "VirusCharacter.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "Components/SceneCaptureComponent2D.h"
 #include "Components/InputComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
@@ -10,27 +11,34 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "Kismet/GameplayStatics.h"
+#include "Particles/ParticleSystemComponent.h"
 #include "Sound/SoundCue.h"
-
-#include "AIBaseCharacter.h"
-
 #include "DrawDebugHelpers.h"
-
 #include "AIBaseCharacter.h"
+#include "VirusPlayerController.h"
 
 
 //////////////////////////////////////////////////////////////////////////
 // AVirusCharacter
 
-AVirusCharacter::AVirusCharacter()
+
+
+AVirusCharacter::AVirusCharacter() : 
+	MaxHP(500.0f), 
+	bAiming(false), 
+	bisDoubleJump(false),
+	CameraDefaultFOV(0.f), //set in BeginPlay
+	CameraZoomedFOV(50.f),
+	CameraCurrentFOV(50.f),
+	ZoomInterpSpeed(20.f)
 {
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
 	
 	// Don't rotate when the controller rotates. Let that just affect the camera.
-	bUseControllerRotationPitch = true;
+	bUseControllerRotationPitch = false;
 	bUseControllerRotationYaw = true;
-	bUseControllerRotationRoll = true;
+	bUseControllerRotationRoll = false;
 
 	// Configure character movement
 	GetCharacterMovement()->bOrientRotationToMovement = true; // Character moves in the direction of input...	
@@ -47,8 +55,9 @@ AVirusCharacter::AVirusCharacter()
 	// Create a camera boom (pulls in towards the player if there is a collision)
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(RootComponent);
-	CameraBoom->TargetArmLength = 400.0f; // The camera follows at this distance behind the character	
-	CameraBoom->bUsePawnControlRotation = false; // Rotate the arm based on the controller
+	CameraBoom->TargetArmLength = 200.0f; // The camera follows at this distance behind the character	
+	CameraBoom->bUsePawnControlRotation = true; // Rotate the arm based on the controller
+
 	CameraBoom->SocketOffset = FVector(0.f, 50.f, 50.f);
 
 	// Create a follow camera
@@ -59,33 +68,22 @@ AVirusCharacter::AVirusCharacter()
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
 
-	/*static ConstructorHelpers::FObjectFinder<UInputAction>IA_Jump(
-		TEXT("/Game/ThirdPerson/Input/Actions/IA_Jump.IA_Jump"));
-	if (IA_Jump.Succeeded())
-	{
-		JumpAction = IA_Jump.Object;
-	}
 
-	static ConstructorHelpers::FObjectFinder<UInputAction>IA_Look(
-		TEXT("/Game/ThirdPerson/Input/Actions/IA_Look.IA_Look"));
-	if (IA_Look.Succeeded())
-	{
-		LookAction = IA_Look.Object;
-	}
+	MinimapArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("MinimapArm"));
+	MinimapArm->SetupAttachment(RootComponent);
+	MinimapArm->TargetArmLength = 3000.0f; // The camera follows at this distance behind the character	
+	MinimapArm->bUsePawnControlRotation = false; // Rotate the arm based on the controller
 
-	static ConstructorHelpers::FObjectFinder<UInputAction>IA_Move(
-		TEXT("/Game/ThirdPerson/Input/Actions/IA_Move.IA_Move"));
-	if (IA_Move.Succeeded())
-	{
-		MoveAction = IA_Move.Object;
-	}
+	MinimapArm->bInheritPitch = false;
+	MinimapArm->bInheritYaw = false;
+	MinimapArm->bInheritRoll = false;
 
-	static ConstructorHelpers::FObjectFinder<UInputAction>IA_Scan(
-		TEXT("/Game/ThirdPerson/Input/Actions/IA_Scan.IA_Scan"));
-	if (IA_Scan.Succeeded())
-	{
-		ScanAction = IA_Scan.Object;
-	}*/
+
+	MinimapCapture = CreateDefaultSubobject<USceneCaptureComponent2D>(TEXT("MinimapCapture"));
+	MinimapCapture->SetupAttachment(MinimapArm, USpringArmComponent::SocketName); 
+	MinimapCapture->ProjectionType = ECameraProjectionMode::Orthographic;
+	MinimapCapture->OrthoWidth = 3000.0f;
+
 }
 
 void AVirusCharacter::BeginPlay()
@@ -101,6 +99,21 @@ void AVirusCharacter::BeginPlay()
 			Subsystem->AddMappingContext(DefaultMappingContext, 0);
 		}
 	}
+
+	VirusPlayerController = Cast<AVirusPlayerController>(GetController());
+	CurrentHP = MaxHP;
+
+	if (FollowCamera)
+	{
+		CameraDefaultFOV = GetFollowCamera()->FieldOfView;
+		CameraCurrentFOV = CameraDefaultFOV;
+	}
+
+}
+
+float AVirusCharacter::GetHP()
+{
+	return CurrentHP / MaxHP;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -113,7 +126,7 @@ void AVirusCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInp
 	{
 
 		//Jumping
-		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &AVirusCharacter::Jump);
+		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &AVirusCharacter::DoubleJump);
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
 
 		//Moving
@@ -125,8 +138,13 @@ void AVirusCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInp
 		//Scanning
 		EnhancedInputComponent->BindAction(ScanAction, ETriggerEvent::Started, this, &AVirusCharacter::Scan);
 
-		//Scanning
+		//Heal
 		EnhancedInputComponent->BindAction(HealAction, ETriggerEvent::Started, this, &AVirusCharacter::Heal);
+
+		//Jumping
+		EnhancedInputComponent->BindAction(AimingAction, ETriggerEvent::Started, this, &AVirusCharacter::Aiming);
+		EnhancedInputComponent->BindAction(AimingAction, ETriggerEvent::Completed, this, &AVirusCharacter::StopAiming);
+
 	}
 
 }
@@ -167,125 +185,139 @@ void AVirusCharacter::Look(const FInputActionValue& Value)
 	}
 }
 
-void AVirusCharacter::Jump(const FInputActionValue& Value)
+void AVirusCharacter::DoubleJump(const FInputActionValue& Value)
 {
-	
-	if (JumpCurrentCount)
+
+	bPressedJump = true;
+	JumpKeyHoldTime = 0.0f;
+
+	bisDoubleJump = JumpCurrentCount ? true : false;
+
+	if (CanJump() && bisDoubleJump)
 	{
 		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-		if (AnimInstance && DoubleJumpMontage && bisDoubleJump)
+		if (AnimInstance && DoubleJumpMontage)
 		{
 			FRotator CharacterRotation = GetActorRotation(); // 캐릭터의 현재 회전 방향 가져오기
 			FVector LaunchDirection = CharacterRotation.Vector(); // 회전 방향을 벡터로 변환
 			LaunchDirection.Normalize(); // vector normallize
-			float LaunchStrength = 60.0f; // 힘의 크기 설정
-			LaunchDirection.Z = 10.0f;
+			float LaunchStrength = 30.0f; // 힘의 크기 설정
+			LaunchDirection.Z = 25.0f;
 
 			AnimInstance->Montage_Play(DoubleJumpMontage);
 			AnimInstance->Montage_JumpToSection(FName("DoubleJump"));
 
 			LaunchCharacter(LaunchDirection * LaunchStrength, false, false);
-			bisDoubleJump = false;
 		}
-	}
-	else
-	{
-		ACharacter::Jump();
-		bisDoubleJump = true;
 	}
 }
 
 
 void AVirusCharacter::Scan(const FInputActionValue& Value)
 {
-	if (Controller != nullptr && FireSound)
+	if (!bisDoubleJump)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Attack"));
-		
-		UGameplayStatics::PlaySound2D(this, FireSound);
-		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-		if (AnimInstance && ScaningMontage)
+		if (Controller != nullptr && FireSound)
 		{
-			AnimInstance->Montage_Play(ScaningMontage);
-			AnimInstance->Montage_JumpToSection(FName("Attack"));
-		}
-	}
+			//UE_LOG(LogTemp, Warning, TEXT("Attack"));
 
-	const USkeletalMeshSocket* BarrelSocket = GetMesh()->GetSocketByName("BarrelSocket");
-	if (BarrelSocket)
-	{
-		const FTransform SocketTransform = BarrelSocket->GetSocketTransform(GetMesh());
-		
-
-		FVector2D ViewportSize;
-		//GEngine -> global engine pointer: hold viewport
-		if (GEngine && GEngine->GameViewport)
-		{
-			GEngine->GameViewport->GetViewportSize(ViewportSize);
-		}
-		
-		//Get Screen space location of crosshairs
-		FVector2D CrosshairLocation(ViewportSize.X / 2.f, ViewportSize.Y / 2.f);
-		CrosshairLocation.Y -= 50.f;
-		FVector CrosshairWorldPosition;
-		FVector CrosshairWorldDirection;
-
-		bool bScreenToWorld = UGameplayStatics::DeprojectScreenToWorld(UGameplayStatics::GetPlayerController(this, 0), CrosshairLocation, CrosshairWorldPosition, CrosshairWorldDirection);
-
-		if (bScreenToWorld) //was deprojection successful?
-		{
-
-			FHitResult ScreenTraceHit;
-			const FVector Start{ CrosshairWorldPosition };
-			const FVector End{ CrosshairWorldPosition + CrosshairWorldDirection * 50'000.f };
-
-			//set beam end point to line trace end point
-			FVector BeamEndPoint{ End };
-
-			//Trace outward from crosshairs world location
-			GetWorld()->LineTraceSingleByChannel(ScreenTraceHit, Start, End, ECollisionChannel::ECC_Visibility);
-
-			if (ScreenTraceHit.bBlockingHit) //was there a trace hit?
+			UGameplayStatics::PlaySound2D(this, FireSound);
+			UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+			if (AnimInstance && ScaningMontage)
 			{
-				//Beam end point is now trace hit location
-				BeamEndPoint = ScreenTraceHit.Location;
-
-				if (LaserFlash)
-				{
-					UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), LaserFlash, ScreenTraceHit.Location);
-				}
-
-				DrawDebugLine(GetWorld(), Start, BeamEndPoint, FColor::Red, false, 2.f);
-
-				if (Cast<AAIBaseCharacter>(ScreenTraceHit.GetActor())) {
-					AAIBaseCharacter* AI = Cast<AAIBaseCharacter>(ScreenTraceHit.GetActor());
-					AI->HPCalculate(-10);
-
-					float AIHPPercent = AI->CurrentHP / AI->MaxHP;
-
-					UE_LOG(LogTemp, Warning, TEXT("AI HP: %f"), AIHPPercent);
-				}
+				AnimInstance->Montage_Play(ScaningMontage);
+				AnimInstance->Montage_JumpToSection(FName("Attack"));
 			}
 		}
 
-		/*FHitResult ScanHit;
-		const FVector Start{ SocketTransform.GetLocation() };
-		const FQuat Rotation{ SocketTransform.GetRotation() };
-		const FVector RotationAxis{ Rotation.GetAxisX() };
-		const FVector End{ Start + RotationAxis* 50'000.f }; //pointing in the direction of the barrel
-
-
-		//ScanHit has stored in it regarding the LineTrace information
-		//if it hit something, return true, if it didn't return false
-		
-		if (ScanHit.bBlockingHit)
+		const USkeletalMeshSocket* BarrelSocket = GetMesh()->GetSocketByName("BarrelSocket");
+		if (BarrelSocket)
 		{
-			DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 2.f);
-			//DrawDebugLine(GetWorld(), ScanHit.Location, 5.f, FColor::Red, false, 2.f);
+			const FTransform SocketTransform = BarrelSocket->GetSocketTransform(GetMesh());
 
-			
-		}*/
+			if (LaserFlash)
+			{
+				UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), LaserFlash, SocketTransform);
+			}
+
+			FVector BeamEnd;
+			bool bBeamEnd = GetBeamEndLocation(SocketTransform.GetLocation(), BeamEnd);
+			if (bBeamEnd)
+			{
+				if (ImpactParticles)
+				{
+					UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactParticles, BeamEnd);
+				}
+				
+			}
+
+			if (BeamParticles)
+			{
+				UParticleSystemComponent* Beam = UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), BeamParticles, SocketTransform);
+				if (Beam)
+				{
+					Beam->SetVectorParameter(FName("Target"), BeamEnd);
+				}
+			}
+		}
 	}
+	
+}
+
+
+
+bool AVirusCharacter::GetBeamEndLocation(const FVector& MuzzleSocketLocation, FVector& OutBeamLocation)
+{
+	FVector2D ViewportSize;
+	//GEngine -> global engine pointer: hold viewport
+	if (GEngine && GEngine->GameViewport)
+	{
+		GEngine->GameViewport->GetViewportSize(ViewportSize);
+	}
+
+	//Get Screen space location of crosshairs
+	FVector2D CrosshairLocation(ViewportSize.X / 2.f, ViewportSize.Y / 2.f);
+	CrosshairLocation.Y -= 50.f;
+	FVector CrosshairWorldPosition; 
+	FVector CrosshairWorldDirection;
+
+	bool bScreenToWorld = UGameplayStatics::DeprojectScreenToWorld(UGameplayStatics::GetPlayerController(this, 0), CrosshairLocation, CrosshairWorldPosition, CrosshairWorldDirection);
+
+	if (bScreenToWorld) //was deprojection successful?
+	{
+
+		FHitResult ScreenTraceHit;
+		const FVector Start{ CrosshairWorldPosition };
+		const FVector End{ CrosshairWorldPosition + CrosshairWorldDirection * 50'000.f };
+
+		//set beam end point to line trace end point
+		OutBeamLocation = End;
+
+		//Trace outward from crosshairs world location
+		GetWorld()->LineTraceSingleByChannel(ScreenTraceHit, Start, End, ECollisionChannel::ECC_Visibility);
+		if (ScreenTraceHit.bBlockingHit) //was there a trace hit?
+		{
+			//Beam end point is now trace hit location
+			OutBeamLocation = ScreenTraceHit.Location;
+			//perform a second trace, this time fro, the gun barrel
+			FHitResult WeaponTraceHit;
+			const FVector WeaponTraceStart{ MuzzleSocketLocation };
+			const FVector StartToEnd{ OutBeamLocation - MuzzleSocketLocation };
+			const FVector WeaponTraceEnd{ MuzzleSocketLocation + StartToEnd * 1.25f};
+			GetWorld()->LineTraceSingleByChannel(WeaponTraceHit, WeaponTraceStart, WeaponTraceEnd, ECollisionChannel::ECC_Visibility);
+			
+			if (WeaponTraceHit.bBlockingHit) // object between barrel and BeamEndpoint?
+			{
+				OutBeamLocation = WeaponTraceHit.Location;
+				//DrawDebugLine(GetWorld(), WeaponTraceStart, WeaponTraceEnd, FColor::Red, false, 2.f);
+			
+				
+			}
+			return true;
+		}
+
+	}
+	return false;
 }
 
 void AVirusCharacter::Heal(const FInputActionValue& Value)
@@ -304,4 +336,37 @@ void AVirusCharacter::Heal(const FInputActionValue& Value)
 	}
 }
 
+void AVirusCharacter::Aiming(const FInputActionValue& Value)
+{
+	bAiming = true;
+}
 
+
+void AVirusCharacter::StopAiming(const FInputActionValue& Value)
+{
+	bAiming = false;
+}
+
+void AVirusCharacter::CameraInterpZoom(float DeltaTime)
+{
+	if (bAiming)
+	{
+		CameraCurrentFOV = FMath::FInterpTo(CameraCurrentFOV, CameraZoomedFOV, DeltaTime, ZoomInterpSpeed);
+		CameraBoom->TargetArmLength = 150.0f;
+	}
+	else
+	{
+		CameraCurrentFOV = FMath::FInterpTo(CameraCurrentFOV, CameraDefaultFOV, DeltaTime, ZoomInterpSpeed);
+		CameraBoom->TargetArmLength = 200.0f;
+	}
+	GetFollowCamera()->SetFieldOfView(CameraCurrentFOV);
+}
+
+void AVirusCharacter::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	//Handle interpolation for zoom when aiming
+	CameraInterpZoom(DeltaTime);
+	
+}

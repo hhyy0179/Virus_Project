@@ -12,9 +12,6 @@ AAIBaseCharacter::AAIBaseCharacter()
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-
-	HPBarWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("HPBarWidget"));
-	HPBarWidget->SetupAttachment(RootComponent);
 }
 
 // Called when the game starts or when spawned
@@ -36,7 +33,6 @@ void AAIBaseCharacter::Tick(float DeltaTime)
 void AAIBaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
-
 }
 
 void AAIBaseCharacter::Die()
@@ -46,11 +42,11 @@ void AAIBaseCharacter::Die()
 	GetWorld()->DestroyActor(this);
 }
 
-void AAIBaseCharacter::HPCalculate(int Value)
+void AAIBaseCharacter::SetCurrentHP(int Value)
 {
 	CurrentHP += Value;
 
-	Cast<UHPBarWidget>(HPBarWidget)->UpdateHPBar(CurrentHP / MaxHP);
+	//Cast<UHPBarWidget>(HPBarWidget)->UpdateHPBar(CurrentHP / MaxHP);
 
 	if (CurrentHP == 0) Die();
 	else return;
@@ -59,5 +55,10 @@ void AAIBaseCharacter::HPCalculate(int Value)
 void AAIBaseCharacter::SetMaxHP(int Value)
 {
 	MaxHP = Value;
+}
+
+float AAIBaseCharacter::GetHP()
+{
+	return CurrentHP / MaxHP;
 }
 

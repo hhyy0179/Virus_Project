@@ -28,15 +28,19 @@ public:
 
 	void Die();
 
-	void HPCalculate(int Value);
+	void SetCurrentHP(int Value);
+
 	void SetMaxHP(int Value);
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	class UWidgetComponent* HPBarWidget;
+	UFUNCTION(BlueprintCallable)
+	float GetHP();
+	
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	float MaxHP = 100;
+	float MaxHP = 100.0f;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	float CurrentHP = 0;
+	float CurrentHP = 0.0f;
+
+
 };

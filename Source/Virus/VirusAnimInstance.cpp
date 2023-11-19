@@ -4,6 +4,8 @@
 #include "VirusAnimInstance.h"
 #include "VirusCharacter.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Kismet/KismetMathLibrary.h"
+
 
 
 void UVirusAnimInstance::UpdateAnimationProperties(float DeltaTime)
@@ -40,6 +42,22 @@ void UVirusAnimInstance::UpdateAnimationProperties(float DeltaTime)
 		}
 		else bIsAccelerating = false;
 
+		FRotator AimRotation = MainCharacter->GetBaseAimRotation();
+		FRotator MovementRotation = UKismetMathLibrary::MakeRotFromX(MainCharacter->GetVelocity());
+		MovementOffset = UKismetMathLibrary::NormalizedDeltaRotator(MovementRotation, AimRotation).Yaw;
+
+		/*FString OffsetMessage = FString::Printf(TEXT("Movement Offset Yaw: %f"), MovementOffset);
+		if (GEngine)
+		{
+			GEngine->AddOnScreenDebugMessage(1, 0.f, FColor::White, OffsetMessage);
+		}*/
+
+		if (MainCharacter->GetVelocity().Size() > 0.f)
+		{
+			
+		}
+		bAiming = MainCharacter->GetAiming();
+		bDoubleJump = MainCharacter->GetDoubleJump();
 	}
 }
 
