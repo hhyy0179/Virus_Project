@@ -10,7 +10,6 @@
 
 void UVirusAnimInstance::UpdateAnimationProperties(float DeltaTime)
 {
-	//매 프레임마다 캐릭터를 참조하고 있는지 확인하고 없을 경우, Casting 해줌.
 	if (MainCharacter == nullptr)
 	{
 		MainCharacter = Cast<AVirusCharacter>(TryGetPawnOwner());
@@ -23,7 +22,7 @@ void UVirusAnimInstance::UpdateAnimationProperties(float DeltaTime)
 		Speed = Velocity.Size();
 
 		//is the character in the air??
-		//isfalling 함수는 추락에 대한 부울 값을 반환한다.
+		//isfalling
 		bIsInAir = MainCharacter->GetCharacterMovement()->IsFalling();
 
 		//is the character is Jumping??
@@ -35,7 +34,7 @@ void UVirusAnimInstance::UpdateAnimationProperties(float DeltaTime)
 
 
 		//is the character accelerating??
-		//GetCurrentAcceleration().Size() : 가속 벡터의 크기를 구하는 함수 -> 0보다 크면 가속한다고 가정
+		//GetCurrentAcceleration().Size() 
 		if (MainCharacter->GetCharacterMovement()->GetCurrentAcceleration().Size() > 0.f)
 		{
 			bIsAccelerating = true;
@@ -61,12 +60,8 @@ void UVirusAnimInstance::UpdateAnimationProperties(float DeltaTime)
 	}
 }
 
-//초기화 작업
 void UVirusAnimInstance::NativeInitializeAnimation()
 {
 
-	//Pawn의 AnumInstance를 가져오는 함수
-	//TryGetPawnOwner 이 함수는 Pawn을 리턴한다. 
-	//AVirusCharacter 포인터에 Pawn 캐릭터가 참조된다. 
 	MainCharacter = Cast<AVirusCharacter>(TryGetPawnOwner());
 }

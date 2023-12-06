@@ -15,7 +15,7 @@ class VIRUS_API UVirusAnimInstance : public UAnimInstance
 	GENERATED_BODY()
 
 public:
-	//매 프레임마다 애니메이션 실행
+
 	UFUNCTION(BlueprintCallable)
 	void UpdateAnimationProperties(float DeltaTime);
 
