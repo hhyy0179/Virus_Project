@@ -17,7 +17,7 @@ class VIRUS_API AVirusPlayerController : public APlayerController
 public:
 	/** Reference to the UMG asset in the edit */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Widgets")
-	TSubclassOf<class UUserWidget> HUDOverlayAsset; //TSubclassOf 는 UClass 유형의 안정성 보장 템플릿 클래스. <> 안에 파생 클래스만 선택 가능. 
+	TSubclassOf<class UUserWidget> HUDOverlayAsset; 
 	
 	/** variable to hold the widget after creating it */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Widgets")

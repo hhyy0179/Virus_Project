@@ -14,23 +14,31 @@
 #include "Particles/ParticleSystemComponent.h"
 #include "Sound/SoundCue.h"
 #include "DrawDebugHelpers.h"
-#include "AIBaseCharacter.h"
+#include "AIProgramCharacter.h"
+#include "BulletHitInterface.h"
 #include "VirusPlayerController.h"
-
+#include "NiagaraFunctionLibrary.h"
+#include "NiagaraComponent.h"
 
 //////////////////////////////////////////////////////////////////////////
 // AVirusCharacter
 
 
 
-AVirusCharacter::AVirusCharacter() : 
-	MaxHP(500.0f), 
-	bAiming(false), 
+AVirusCharacter::AVirusCharacter(): 
+	bAiming(false),
+	MaxHP(100.0f),
 	bisDoubleJump(false),
+
 	CameraDefaultFOV(0.f), //set in BeginPlay
 	CameraZoomedFOV(50.f),
 	CameraCurrentFOV(50.f),
-	ZoomInterpSpeed(20.f)
+	ZoomInterpSpeed(20.f),
+
+	//Turn rates for aiming/not aiming
+	HipLookRate(1.f),
+	AimingLookRate(0.4f)
+
 {
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
@@ -124,7 +132,6 @@ void AVirusCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInp
 	// Set up action bindings
 	if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent))
 	{
-
 		//Jumping
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &AVirusCharacter::DoubleJump);
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
@@ -141,7 +148,7 @@ void AVirusCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInp
 		//Heal
 		EnhancedInputComponent->BindAction(HealAction, ETriggerEvent::Started, this, &AVirusCharacter::Heal);
 
-		//Jumping
+		//Aiming
 		EnhancedInputComponent->BindAction(AimingAction, ETriggerEvent::Started, this, &AVirusCharacter::Aiming);
 		EnhancedInputComponent->BindAction(AimingAction, ETriggerEvent::Completed, this, &AVirusCharacter::StopAiming);
 
@@ -176,12 +183,22 @@ void AVirusCharacter::Look(const FInputActionValue& Value)
 {
 	// input is a Vector2D
 	FVector2D LookAxisVector = Value.Get<FVector2D>();
-
+	float LookScaleX , LookScaleY;
 	if (Controller != nullptr)
 	{
 		// add yaw and pitch input to controller
-		AddControllerYawInput(LookAxisVector.X);
-		AddControllerPitchInput(LookAxisVector.Y);
+		if (bAiming)
+		{
+			LookScaleX = LookAxisVector.X * AimingLookRate;
+			LookScaleY = LookAxisVector.Y * AimingLookRate;
+		}
+		else
+		{
+			LookScaleX = LookAxisVector.X * HipLookRate;
+			LookScaleY = LookAxisVector.Y * HipLookRate;
+		}
+		AddControllerYawInput(LookScaleX);
+		AddControllerPitchInput(LookScaleY);
 	}
 }
 
@@ -198,10 +215,10 @@ void AVirusCharacter::DoubleJump(const FInputActionValue& Value)
 		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 		if (AnimInstance && DoubleJumpMontage)
 		{
-			FRotator CharacterRotation = GetActorRotation(); // 캐릭터의 현재 회전 방향 가져오기
-			FVector LaunchDirection = CharacterRotation.Vector(); // 회전 방향을 벡터로 변환
+			FRotator CharacterRotation = GetActorRotation(); 
+			FVector LaunchDirection = CharacterRotation.Vector(); 
 			LaunchDirection.Normalize(); // vector normallize
-			float LaunchStrength = 30.0f; // 힘의 크기 설정
+			float LaunchStrength = 30.0f; 
 			LaunchDirection.Z = 25.0f;
 
 			AnimInstance->Montage_Play(DoubleJumpMontage);
@@ -209,20 +226,23 @@ void AVirusCharacter::DoubleJump(const FInputActionValue& Value)
 
 			LaunchCharacter(LaunchDirection * LaunchStrength, false, false);
 		}
+
 	}
 }
 
 
 void AVirusCharacter::Scan(const FInputActionValue& Value)
 {
-	if (!bisDoubleJump)
-	{
+
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+
+	//if (!bisDoubleJump)
+	//{
 		if (Controller != nullptr && FireSound)
 		{
 			//UE_LOG(LogTemp, Warning, TEXT("Attack"));
 
 			UGameplayStatics::PlaySound2D(this, FireSound);
-			UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 			if (AnimInstance && ScaningMontage)
 			{
 				AnimInstance->Montage_Play(ScaningMontage);
@@ -237,38 +257,70 @@ void AVirusCharacter::Scan(const FInputActionValue& Value)
 
 			if (LaserFlash)
 			{
-				UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), LaserFlash, SocketTransform);
+				UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), LaserFlash, SocketTransform.GetLocation());
 			}
 
-			FVector BeamEnd;
-			bool bBeamEnd = GetBeamEndLocation(SocketTransform.GetLocation(), BeamEnd);
+			FHitResult BeamHitResult;
+			bool bBeamEnd = GetBeamEndLocation(SocketTransform.GetLocation(), BeamHitResult);
 			if (bBeamEnd)
 			{
-				if (ImpactParticles)
+				
+				// Does hit Actor implement BulletHitInterface?
+				if (BeamHitResult.GetActor())
 				{
-					UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactParticles, BeamEnd);
+					IBulletHitInterface* BulletHitInterface = Cast<IBulletHitInterface>(BeamHitResult.GetActor());
+					if (BulletHitInterface)
+					{
+						BulletHitInterface->BulletHit_Implementation(BeamHitResult);
+					}
+					AAIProgramCharacter* HitProgram = Cast<AAIProgramCharacter>(BeamHitResult.GetActor());
+					if (HitProgram)
+					{
+						//Head Shot
+						if (BeamHitResult.BoneName.ToString() == HitProgram->GetHeadBone())
+						{
+							UGameplayStatics::ApplyDamage(BeamHitResult.GetActor(), 50.f, GetController(), this, UDamageType::StaticClass());
+						}
+						//Body Shot
+						else
+						{
+							UGameplayStatics::ApplyDamage(BeamHitResult.GetActor(), 20.f, GetController(), this, UDamageType::StaticClass());
+						}
+						
+						UE_LOG(LogTemp, Warning, TEXT("Hit Component: %s"), *BeamHitResult.BoneName.ToString());
+					}
+					else
+					{
+						//Spawn default particles
+						if (ImpactParticles)
+						{
+							UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), ImpactParticles, BeamHitResult.Location);
+						}
+					}
 				}
 				
 			}
 
 			if (BeamParticles)
 			{
-				UParticleSystemComponent* Beam = UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), BeamParticles, SocketTransform);
+				UNiagaraComponent* Beam = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), BeamParticles, SocketTransform.GetLocation());
 				if (Beam)
 				{
-					Beam->SetVectorParameter(FName("Target"), BeamEnd);
+					Beam->SetVectorParameter(FName("Target"), BeamHitResult.Location);
 				}
 			}
-		}
+		//}
 	}
 	
 }
 
 
 
-bool AVirusCharacter::GetBeamEndLocation(const FVector& MuzzleSocketLocation, FVector& OutBeamLocation)
+bool AVirusCharacter::GetBeamEndLocation(const FVector& MuzzleSocketLocation, FHitResult& OutHitResult)
 {
 	FVector2D ViewportSize;
+	FVector OutBeamLocation;
+
 	//GEngine -> global engine pointer: hold viewport
 	if (GEngine && GEngine->GameViewport)
 	{
@@ -300,17 +352,15 @@ bool AVirusCharacter::GetBeamEndLocation(const FVector& MuzzleSocketLocation, FV
 			//Beam end point is now trace hit location
 			OutBeamLocation = ScreenTraceHit.Location;
 			//perform a second trace, this time fro, the gun barrel
-			FHitResult WeaponTraceHit;
 			const FVector WeaponTraceStart{ MuzzleSocketLocation };
-			const FVector StartToEnd{ OutBeamLocation - MuzzleSocketLocation };
+			const FVector StartToEnd{ OutBeamLocation - WeaponTraceStart };
 			const FVector WeaponTraceEnd{ MuzzleSocketLocation + StartToEnd * 1.25f};
-			GetWorld()->LineTraceSingleByChannel(WeaponTraceHit, WeaponTraceStart, WeaponTraceEnd, ECollisionChannel::ECC_Visibility);
+			GetWorld()->LineTraceSingleByChannel(OutHitResult, WeaponTraceStart, WeaponTraceEnd, ECollisionChannel::ECC_Visibility);
 			
-			if (WeaponTraceHit.bBlockingHit) // object between barrel and BeamEndpoint?
+			if (!OutHitResult.bBlockingHit) // object between barrel and BeamEndpoint?
 			{
-				OutBeamLocation = WeaponTraceHit.Location;
+				OutHitResult.Location = OutBeamLocation;
 				//DrawDebugLine(GetWorld(), WeaponTraceStart, WeaponTraceEnd, FColor::Red, false, 2.f);
-			
 				
 			}
 			return true;
@@ -362,11 +412,29 @@ void AVirusCharacter::CameraInterpZoom(float DeltaTime)
 	GetFollowCamera()->SetFieldOfView(CameraCurrentFOV);
 }
 
+void AVirusCharacter::CalculateCrosshairSpread(float DeltaTime)
+{
+	FVector2D WalkSpeedRange{ 0.f, GetCharacterMovement()->MaxWalkSpeed };
+	FVector2D VelocityMultiplierRange{ 0.f, 1.f };
+	FVector2D Velocity{ GetVelocity() };
+
+	CrosshairVelocityFactor = FMath::GetMappedRangeValueClamped(WalkSpeedRange, VelocityMultiplierRange, Velocity.Size());
+	CrosshairSpreadMultiplier = 0.5f + CrosshairVelocityFactor;
+
+}
+
 void AVirusCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
 	//Handle interpolation for zoom when aiming
 	CameraInterpZoom(DeltaTime);
-	
+	//Calculate Crosshair Spread Multiplier
+	CalculateCrosshairSpread(DeltaTime);
+}
+
+float AVirusCharacter::GetCrosshairSpreadMultiplier() const
+{
+
+	return CrosshairSpreadMultiplier;
 }
