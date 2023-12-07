@@ -26,21 +26,18 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-	void Die();
-
-	void SetCurrentHP(int Value);
-
 	void SetMaxHP(int Value);
+	void CountHP(int Value);
 
 	UFUNCTION(BlueprintCallable)
 	float GetHP();
 	
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	float MaxHP = 100.0f;
+	int MaxHP = 100;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	float CurrentHP = 0.0f;
+	int CurrentHP = 0;
 
 
 };

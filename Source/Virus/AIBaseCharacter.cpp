@@ -35,26 +35,21 @@ void AAIBaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 }
 
-void AAIBaseCharacter::Die()
-{
-	// Die Anim Play
-	// after few seconds or ticks
-	GetWorld()->DestroyActor(this);
-}
-
-void AAIBaseCharacter::SetCurrentHP(int Value)
-{
-	CurrentHP += Value;
-
-	//Cast<UHPBarWidget>(HPBarWidget)->UpdateHPBar(CurrentHP / MaxHP);
-
-	if (CurrentHP == 0) Die();
-	else return;
-}
 
 void AAIBaseCharacter::SetMaxHP(int Value)
 {
 	MaxHP = Value;
+}
+
+void AAIBaseCharacter::CountHP(int Value)
+{
+	CurrentHP -= Value;
+
+	UE_LOG(LogTemp, Warning, TEXT("Parent HP %d"), CurrentHP);
+
+	if (CurrentHP <= 0) {
+		GetWorld()->DestroyActor(this);
+	}
 }
 
 float AAIBaseCharacter::GetHP()
