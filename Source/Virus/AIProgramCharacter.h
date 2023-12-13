@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "BulletHitInterface.h"
+#include "Components/WidgetComponent.h"
 #include "AIProgramCharacter.generated.h"
 
 /**
@@ -21,12 +22,14 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
-	UFUNCTION(BlueprintNativeEvent)
+	UWidgetComponent* GetWidgetComponentFromActor();
+
+	UFUNCTION()
 	void ShowHealthBar();
 
 	void ShowHealthBar_Implementation();
 
-	UFUNCTION(BlueprintImplementableEvent)
+	UFUNCTION()
 	void HideHealthBar();
 
 private:
@@ -69,5 +72,7 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	float GetCurrentHP() { return Health / MaxHealth; }
+
+	UWidgetComponent* HPBarWidget = nullptr;
 
 };

@@ -5,6 +5,7 @@
 
 #include "Engine/World.h"
 #include "Components/WidgetComponent.h"
+#include "Components/CapsuleComponent.h"
 #include "HPBarWidget.h"
 
 // Sets default values
@@ -18,9 +19,8 @@ AAIBaseCharacter::AAIBaseCharacter()
 void AAIBaseCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	
-	CurrentHP = MaxHP;
 }
+
 
 // Called every frame
 void AAIBaseCharacter::Tick(float DeltaTime)
@@ -34,26 +34,3 @@ void AAIBaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 }
-
-
-void AAIBaseCharacter::SetMaxHP(int Value)
-{
-	MaxHP = Value;
-}
-
-void AAIBaseCharacter::CountHP(int Value)
-{
-	CurrentHP -= Value;
-
-	UE_LOG(LogTemp, Warning, TEXT("Parent HP %d"), CurrentHP);
-
-	if (CurrentHP <= 0) {
-		GetWorld()->DestroyActor(this);
-	}
-}
-
-float AAIBaseCharacter::GetHP()
-{
-	return CurrentHP / MaxHP;
-}
-

@@ -32,6 +32,55 @@ void AAIProgramCharacter::BeginPlay() {
 
 	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
 	Health = MaxHealth;
+	GetWidgetComponentFromActor();
+	HideHealthBar();
+}
+
+UWidgetComponent* AAIProgramCharacter::GetWidgetComponentFromActor()
+{
+	if (this)
+	{
+		// 액터의 루트 컴포넌트를 가져옵니다.
+
+		if (RootComponent)
+		{
+			// 캡슐 컴포넌트에서 위젯 컴포넌트를 찾습니다.
+			UWidgetComponent* WidgetComponent = nullptr;
+
+			// 캡슐 컴포넌트의 자식 컴포넌트들을 확인합니다.
+			for (USceneComponent* ChildComponent : RootComponent->GetAttachChildren())
+			{
+				// 자식 컴포넌트가 위젯 컴포넌트인지 확인합니다.
+				if (ChildComponent->IsA<UWidgetComponent>())
+				{
+					WidgetComponent = Cast<UWidgetComponent>(ChildComponent);
+					break; // 원하는 컴포넌트를 찾았으므로 루프를 종료합니다.
+				}
+			}
+
+			if (WidgetComponent)
+			{
+				HPBarWidget = WidgetComponent;
+				UE_LOG(LogTemp, Warning, TEXT("I Find WidgetComponent"));
+				return WidgetComponent;
+			}
+			else 
+			{
+				UE_LOG(LogTemp, Warning, TEXT("I Can't Find WidgetComponent"));
+			}
+		}
+	}
+	return nullptr;
+}
+
+void AAIProgramCharacter::ShowHealthBar()
+{
+	HPBarWidget->SetVisibility(true);
+}
+
+void AAIProgramCharacter::HideHealthBar()
+{
+	HPBarWidget->SetVisibility(false);
 }
 
 void AAIProgramCharacter::ShowHealthBar_Implementation()

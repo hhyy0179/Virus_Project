@@ -3,17 +3,17 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Character.h"
-#include "AIBaseCharacter.generated.h"
+#include "GameFramework/Pawn.h"
+#include "AIAllyCharacter.generated.h"
 
 UCLASS()
-class VIRUS_API AAIBaseCharacter : public ACharacter
+class VIRUS_API AAIAllyCharacter : public APawn
 {
 	GENERATED_BODY()
 
 public:
-	// Sets default values for this character's properties
-	AAIBaseCharacter();
+	// Sets default values for this pawn's properties
+	AAIAllyCharacter();
 
 protected:
 	// Called when the game starts or when spawned
@@ -25,6 +25,4 @@ public:
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-
-
 };
