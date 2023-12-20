@@ -3,11 +3,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Pawn.h"
+#include "GameFramework/Character.h"
 #include "AIAllyCharacter.generated.h"
 
 UCLASS()
-class VIRUS_API AAIAllyCharacter : public APawn
+class VIRUS_API AAIAllyCharacter : public ACharacter
 {
 	GENERATED_BODY()
 

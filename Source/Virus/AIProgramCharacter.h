@@ -29,6 +29,8 @@ protected:
 
 	void ShowHealthBar_Implementation();
 
+	void CloneActor();
+
 	UFUNCTION()
 	void HideHealthBar();
 

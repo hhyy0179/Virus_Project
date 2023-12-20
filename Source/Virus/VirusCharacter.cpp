@@ -273,6 +273,7 @@ void AVirusCharacter::Scan(const FInputActionValue& Value)
 					{
 						BulletHitInterface->BulletHit_Implementation(BeamHitResult);
 					}
+
 					AAIProgramCharacter* HitProgram = Cast<AAIProgramCharacter>(BeamHitResult.GetActor());
 					if (HitProgram)
 					{

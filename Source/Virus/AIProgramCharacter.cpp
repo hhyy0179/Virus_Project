@@ -14,7 +14,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Particles/ParticleSystemComponent.h"
 #include "Sound/SoundCue.h"
-
+#include "AIAllyCharacter.h"
 
 AAIProgramCharacter::AAIProgramCharacter():
 	MaxHealth(100.f),
@@ -44,17 +44,14 @@ UWidgetComponent* AAIProgramCharacter::GetWidgetComponentFromActor()
 
 		if (RootComponent)
 		{
-			// 캡슐 컴포넌트에서 위젯 컴포넌트를 찾습니다.
 			UWidgetComponent* WidgetComponent = nullptr;
 
-			// 캡슐 컴포넌트의 자식 컴포넌트들을 확인합니다.
 			for (USceneComponent* ChildComponent : RootComponent->GetAttachChildren())
 			{
-				// 자식 컴포넌트가 위젯 컴포넌트인지 확인합니다.
 				if (ChildComponent->IsA<UWidgetComponent>())
 				{
 					WidgetComponent = Cast<UWidgetComponent>(ChildComponent);
-					break; // 원하는 컴포넌트를 찾았으므로 루프를 종료합니다.
+					break; 
 				}
 			}
 
@@ -80,6 +77,7 @@ void AAIProgramCharacter::ShowHealthBar()
 
 void AAIProgramCharacter::HideHealthBar()
 {
+	UE_LOG(LogTemp, Warning, TEXT("Hide Health Bar@@@@@@@"));
 	HPBarWidget->SetVisibility(false);
 }
 
@@ -92,6 +90,31 @@ void AAIProgramCharacter::ShowHealthBar_Implementation()
 void AAIProgramCharacter::Die()
 {
 	HideHealthBar();
+	CloneActor();
+	GetWorld()->DestroyActor(this);
+}
+
+void AAIProgramCharacter::CloneActor()
+{
+	TSubclassOf<AAIAllyCharacter> NewActorClass = AAIAllyCharacter::StaticClass();
+	UObject* ClassPackage = ANY_PACKAGE;
+
+	UObject* SpawnActor = Cast<UObject>(StaticLoadObject(UObject::StaticClass(), NULL, TEXT("/Game/_VirusGame/AI/BP_AIAllyCharacter.BP_AIAllyCharacter")));
+	UBlueprint* GeneratedBP = Cast<UBlueprint>(SpawnActor);
+
+	if (this && SpawnActor)
+	{
+		FTransform ActorTransform = this->GetActorTransform();
+		this->SetActorLocation(FVector(0.f, 0.f, 0.f));
+
+		// 새로운 액터 생성
+		AAIAllyCharacter* NewActor = GetWorld()->SpawnActor<AAIAllyCharacter>(GeneratedBP->GeneratedClass, ActorTransform);
+		UE_LOG(LogTemp, Warning, TEXT("CloneActor Success"));
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("SpawnToActor Class is None"));
+	}
 }
 
 void AAIProgramCharacter::Tick(float DeltaTime)
