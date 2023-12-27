@@ -4,43 +4,17 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "AIProgramCharacter.h"
 #include "AIBaseCharacter.generated.h"
 
 UCLASS()
-class VIRUS_API AAIBaseCharacter : public ACharacter
+class VIRUS_API AAIBaseCharacter : public AAIProgramCharacter
 {
 	GENERATED_BODY()
 
 public:
 	// Sets default values for this character's properties
 	AAIBaseCharacter();
-
-protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
-
-public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
-
-	// Called to bind functionality to input
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-
-	void Die();
-
-	void SetCurrentHP(int Value);
-
-	void SetMaxHP(int Value);
-
-	UFUNCTION(BlueprintCallable)
-	float GetHP();
-	
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	float MaxHP = 100.0f;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	float CurrentHP = 0.0f;
 
 
 };

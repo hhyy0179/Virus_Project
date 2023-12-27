@@ -86,7 +86,6 @@ AVirusCharacter::AVirusCharacter():
 	MinimapArm->bInheritYaw = false;
 	MinimapArm->bInheritRoll = false;
 
-
 	MinimapCapture = CreateDefaultSubobject<USceneCaptureComponent2D>(TEXT("MinimapCapture"));
 	MinimapCapture->SetupAttachment(MinimapArm, USpringArmComponent::SocketName); 
 	MinimapCapture->ProjectionType = ECameraProjectionMode::Orthographic;
@@ -264,7 +263,6 @@ void AVirusCharacter::Scan(const FInputActionValue& Value)
 			bool bBeamEnd = GetBeamEndLocation(SocketTransform.GetLocation(), BeamHitResult);
 			if (bBeamEnd)
 			{
-				
 				// Does hit Actor implement BulletHitInterface?
 				if (BeamHitResult.GetActor())
 				{
@@ -273,6 +271,7 @@ void AVirusCharacter::Scan(const FInputActionValue& Value)
 					{
 						BulletHitInterface->BulletHit_Implementation(BeamHitResult);
 					}
+
 					AAIProgramCharacter* HitProgram = Cast<AAIProgramCharacter>(BeamHitResult.GetActor());
 					if (HitProgram)
 					{
