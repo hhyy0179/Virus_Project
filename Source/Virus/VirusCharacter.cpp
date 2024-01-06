@@ -19,6 +19,7 @@
 #include "VirusPlayerController.h"
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraComponent.h"
+#include "NiagaraEmitter.h"
 
 //////////////////////////////////////////////////////////////////////////
 // AVirusCharacter
@@ -142,7 +143,8 @@ void AVirusCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInp
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AVirusCharacter::Look);
 
 		//Scanning
-		EnhancedInputComponent->BindAction(ScanAction, ETriggerEvent::Started, this, &AVirusCharacter::Scan);
+		EnhancedInputComponent->BindAction(ScanAction, ETriggerEvent::Triggered, this, &AVirusCharacter::Scan);
+		//EnhancedInputComponent->BindAction(ScanAction, ETriggerEvent::Completed, this, &AVirusCharacter::StopScan);
 
 		//Heal
 		EnhancedInputComponent->BindAction(HealAction, ETriggerEvent::Started, this, &AVirusCharacter::Heal);
@@ -252,11 +254,13 @@ void AVirusCharacter::Scan(const FInputActionValue& Value)
 		const USkeletalMeshSocket* BarrelSocket = GetMesh()->GetSocketByName("BarrelSocket");
 		if (BarrelSocket)
 		{
-			const FTransform SocketTransform = BarrelSocket->GetSocketTransform(GetMesh());
+			FTransform SocketTransform = BarrelSocket->GetSocketTransform(GetMesh());
 
 			if (LaserFlash)
 			{
-				UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), LaserFlash, SocketTransform.GetLocation());
+				FlashInstance = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), LaserFlash, SocketTransform.GetLocation());
+				FlashInstance->Activate();
+
 			}
 
 			FHitResult BeamHitResult;
@@ -285,7 +289,7 @@ void AVirusCharacter::Scan(const FInputActionValue& Value)
 						{
 							UGameplayStatics::ApplyDamage(BeamHitResult.GetActor(), 20.f, GetController(), this, UDamageType::StaticClass());
 						}
-						
+
 						UE_LOG(LogTemp, Warning, TEXT("Hit Component: %s"), *BeamHitResult.BoneName.ToString());
 					}
 					else
@@ -293,27 +297,28 @@ void AVirusCharacter::Scan(const FInputActionValue& Value)
 						//Spawn default particles
 						if (ImpactParticles)
 						{
-							UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), ImpactParticles, BeamHitResult.Location);
+							EndHitInstance = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), ImpactParticles, BeamHitResult.Location);
+							EndHitInstance->Activate();
+
 						}
 					}
 				}
-				
+
 			}
 
 			if (BeamParticles)
 			{
-				UNiagaraComponent* Beam = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), BeamParticles, SocketTransform.GetLocation());
-				if (Beam)
+				BeamInstance = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), BeamParticles, SocketTransform.GetLocation());
+
+				if (BeamInstance)
 				{
-					Beam->SetVectorParameter(FName("Target"), BeamHitResult.Location);
+					BeamInstance->SetVectorParameter(FName("LaserStart"), SocketTransform.GetLocation());
+					BeamInstance->SetVectorParameter(FName("LaserEnd"), BeamHitResult.Location);
+					BeamInstance->Activate();
 				}
 			}
-		//}
-	}
-	
+		}
 }
-
-
 
 bool AVirusCharacter::GetBeamEndLocation(const FVector& MuzzleSocketLocation, FHitResult& OutHitResult)
 {
@@ -419,7 +424,6 @@ void AVirusCharacter::CalculateCrosshairSpread(float DeltaTime)
 
 	CrosshairVelocityFactor = FMath::GetMappedRangeValueClamped(WalkSpeedRange, VelocityMultiplierRange, Velocity.Size());
 	CrosshairSpreadMultiplier = 0.5f + CrosshairVelocityFactor;
-
 }
 
 void AVirusCharacter::Tick(float DeltaTime)

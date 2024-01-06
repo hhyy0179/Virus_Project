@@ -92,6 +92,7 @@ class AVirusCharacter : public ACharacter
 	/** Current field of view this frame */
 	float CameraCurrentFOV;
 
+
 	/** Interp speed for zooming when aiming */
 	//UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
 	float ZoomInterpSpeed;
@@ -143,6 +144,8 @@ class AVirusCharacter : public ACharacter
 	float CrosshairShootingFactor;
 
 
+
+
 public:
 	AVirusCharacter();
 
@@ -178,7 +181,6 @@ protected:
 
 	void CalculateCrosshairSpread(float DeltaTime);
 
-			
 protected:
 	// APawn interface
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -187,6 +189,10 @@ protected:
 	virtual void BeginPlay();
 
 	virtual void Tick(float DeltaTime);
+
+	class UNiagaraComponent* EndHitInstance;
+	class UNiagaraComponent* BeamInstance;
+	class UNiagaraComponent* FlashInstance;
 
 public:
 	/** Returns CameraBoom subobject **/
