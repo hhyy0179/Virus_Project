@@ -14,6 +14,8 @@
 #include "Kismet/GameplayStatics.h"
 #include "Particles/ParticleSystemComponent.h"
 #include "Sound/SoundCue.h"
+#include "HPBarWidget.h"
+#include "UObject/ConstructorHelpers.h"
 #include "AIAllyCharacter.h"
 
 AAIProgramCharacter::AAIProgramCharacter():
@@ -23,9 +25,23 @@ AAIProgramCharacter::AAIProgramCharacter():
 {
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+
+	Health = MaxHealth;
+
+	/*HealthBarWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("HealthBar"));
+
+	static ConstructorHelpers::FClassFinder<UHPBarWidget> HealthBarClass(TEXT("/Game/_VirusGame/HUD/BP_NewAIHPBar.BP_NewAIHPBar_C"));
+	if (HealthBarClass.Succeeded())
+	{
+		HealthBarWidget->SetWidgetClass(HealthBarClass.Class);
+		
+		UE_LOG(LogTemp, Warning, TEXT("There is HealthBarclass"));
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("There is no HealthBarClass"));
+	}*/
 }
-
-
 
 void AAIProgramCharacter::BeginPlay() {
 	Super::BeginPlay();
@@ -36,6 +52,19 @@ void AAIProgramCharacter::BeginPlay() {
 	HideHealthBar();
 }
 
+void AAIProgramCharacter::ShowHealthBar()
+{	
+	HPBarWidgetComponent->SetVisibility(true);
+	HPBar->SetPercent(Health / MaxHealth);
+	GetWorldTimerManager().ClearTimer(HealthBarTimer);
+	GetWorldTimerManager().SetTimer(HealthBarTimer, this, &AAIProgramCharacter::HideHealthBar, HealthBarDisplayTime);
+}
+
+void AAIProgramCharacter::HideHealthBar()
+{
+	HPBarWidgetComponent->SetVisibility(false);
+}
+
 UWidgetComponent* AAIProgramCharacter::GetWidgetComponentFromActor()
 {
 	if (this)
@@ -44,47 +73,41 @@ UWidgetComponent* AAIProgramCharacter::GetWidgetComponentFromActor()
 
 		if (RootComponent)
 		{
-			UWidgetComponent* WidgetComponent = nullptr;
-
 			for (USceneComponent* ChildComponent : RootComponent->GetAttachChildren())
 			{
 				if (ChildComponent->IsA<UWidgetComponent>())
 				{
-					WidgetComponent = Cast<UWidgetComponent>(ChildComponent);
-					break; 
+					HPBarWidgetComponent = Cast<UWidgetComponent>(ChildComponent);
+
+					if (HPBarWidgetComponent)
+					{
+						HPBar = Cast<UHPBarWidget>(HPBarWidgetComponent->GetUserWidgetObject());
+
+						if (HPBar) {
+						}
+						else {
+							UE_LOG(LogTemp, Warning, TEXT("Get HP Fail"));
+						}
+
+						return HPBarWidgetComponent;
+					}
+					else
+					{
+						UE_LOG(LogTemp, Warning, TEXT("I Can't Find WidgetComponent"));
+					}
+
+					break;
 				}
 			}
 
-			if (WidgetComponent)
-			{
-				HPBarWidget = WidgetComponent;
-				UE_LOG(LogTemp, Warning, TEXT("I Find WidgetComponent"));
-				return WidgetComponent;
-			}
-			else 
-			{
-				UE_LOG(LogTemp, Warning, TEXT("I Can't Find WidgetComponent"));
-			}
 		}
 	}
 	return nullptr;
 }
 
-void AAIProgramCharacter::ShowHealthBar()
-{
-	HPBarWidget->SetVisibility(true);
-}
-
-void AAIProgramCharacter::HideHealthBar()
-{
-	UE_LOG(LogTemp, Warning, TEXT("Hide Health Bar@@@@@@@"));
-	HPBarWidget->SetVisibility(false);
-}
-
 void AAIProgramCharacter::ShowHealthBar_Implementation()
 {
-	GetWorldTimerManager().ClearTimer(HealthBarTimer);
-	GetWorldTimerManager().SetTimer(HealthBarTimer, this, &AAIProgramCharacter::HideHealthBar, HealthBarDisplayTime);
+	
 }
 
 void AAIProgramCharacter::Die()
@@ -99,7 +122,7 @@ void AAIProgramCharacter::CloneActor()
 	TSubclassOf<AAIAllyCharacter> NewActorClass = AAIAllyCharacter::StaticClass();
 	UObject* ClassPackage = ANY_PACKAGE;
 
-	UObject* SpawnActor = Cast<UObject>(StaticLoadObject(UObject::StaticClass(), NULL, TEXT("/Game/_VirusGame/AI/BP_AIAllyCharacter.BP_AIAllyCharacter")));
+	UObject* SpawnActor = Cast<UObject>(StaticLoadObject(UObject::StaticClass(), NULL, TEXT("/Game/_VirusGame/AI/AIAllyCharacter/BP_AIAllyCharacter.BP_AIAllyCharacter")));
 	UBlueprint* GeneratedBP = Cast<UBlueprint>(SpawnActor);
 
 	if (this && SpawnActor)
@@ -109,7 +132,6 @@ void AAIProgramCharacter::CloneActor()
 
 		// 货肺款 咀磐 积己
 		AAIAllyCharacter* NewActor = GetWorld()->SpawnActor<AAIAllyCharacter>(GeneratedBP->GeneratedClass, ActorTransform);
-		UE_LOG(LogTemp, Warning, TEXT("CloneActor Success"));
 	}
 	else
 	{
@@ -124,15 +146,24 @@ void AAIProgramCharacter::Tick(float DeltaTime)
 
 void AAIProgramCharacter::BulletHit_Implementation(FHitResult HitResult)
 {
+
+}
+
+void AAIProgramCharacter::BulletHit(FHitResult HitResult, float Damage)
+{
+	Health -= Damage;
+
 	if (ImpactSound)
 	{
 		UGameplayStatics::PlaySoundAtLocation(this, ImpactSound, GetActorLocation());
 
+	
 	}
 	if (ImpactParicles)
 	{
 		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactParicles, HitResult.Location, FRotator(0.f), true);
 	}
+
 	ShowHealthBar();
 }
 
@@ -149,6 +180,22 @@ float AAIProgramCharacter::TakeDamage(float DamageAmount, FDamageEvent const& Da
 	}
 
 	return DamageAmount;
+}
+
+void AAIProgramCharacter::TakeDamage(float DamageAmount)
+{
+	Health -= DamageAmount;
+
+	if (ImpactSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, ImpactSound, GetActorLocation());
+	}
+
+	ShowHealthBar();
+
+	if (Health >= 0) {
+		Die();
+	}
 }
 
 

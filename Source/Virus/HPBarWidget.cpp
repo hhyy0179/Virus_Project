@@ -19,3 +19,8 @@ void UHPBarWidget::UpdateHPBar(float Value)
 {
 	HPBar->SetPercent(Value);
 }
+
+void UHPBarWidget::SetPercent(float Value)
+{
+	HPBar->SetPercent(Value);
+}

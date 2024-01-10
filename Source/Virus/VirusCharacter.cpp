@@ -17,6 +17,7 @@
 #include "AIProgramCharacter.h"
 #include "BulletHitInterface.h"
 #include "VirusPlayerController.h"
+#include "AIVaccineCharacter2.h"
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraComponent.h"
 
@@ -273,30 +274,53 @@ void AVirusCharacter::Scan(const FInputActionValue& Value)
 					{
 						BulletHitInterface->BulletHit_Implementation(BeamHitResult);
 					}
+					else
+					{
+						return;
+					}
 
 					AAIProgramCharacter* HitProgram = Cast<AAIProgramCharacter>(BeamHitResult.GetActor());
+					AAIVaccineCharacter2* HitVaccine = Cast<AAIVaccineCharacter2>(BeamHitResult.GetActor());
+
 					if (HitProgram)
 					{
 						//Head Shot
 						if (BeamHitResult.BoneName.ToString() == HitProgram->GetHeadBone())
 						{
-							UGameplayStatics::ApplyDamage(BeamHitResult.GetActor(), 50.f, GetController(), this, UDamageType::StaticClass());
+							HitProgram->BulletHit(BeamHitResult, 50.f);
 						}
 						//Body Shot
 						else
 						{
-							UGameplayStatics::ApplyDamage(BeamHitResult.GetActor(), 20.f, GetController(), this, UDamageType::StaticClass());
+							HitProgram->BulletHit(BeamHitResult, 20.f);
 						}
 						
+						if (HitProgram->Health <= 0) 
+						{
+							HitProgram->Die();
+						}
 						UE_LOG(LogTemp, Warning, TEXT("Hit Component: %s"), *BeamHitResult.BoneName.ToString());
 					}
-					else
+
+					else if (HitVaccine)
 					{
-						//Spawn default particles
-						if (ImpactParticles)
+						//Head Shot
+						if (BeamHitResult.BoneName.ToString() == HitVaccine->GetHeadBone())
 						{
-							UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), ImpactParticles, BeamHitResult.Location);
+							HitVaccine->BulletHit(BeamHitResult, 50.f);
 						}
+						//Body Shot
+						else
+						{
+							HitVaccine->BulletHit(BeamHitResult, 20.f);
+						}
+
+						if (HitVaccine->Health <= 0)
+						{
+							HitVaccine->Die();
+						}
+
+						UE_LOG(LogTemp, Warning, TEXT("Hit Component: %s"), *BeamHitResult.BoneName.ToString());
 					}
 				}
 				
