@@ -160,6 +160,9 @@ void AVirusCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInp
 		EnhancedInputComponent->BindAction(AimingAction, ETriggerEvent::Started, this, &AVirusCharacter::Aiming);
 		EnhancedInputComponent->BindAction(AimingAction, ETriggerEvent::Completed, this, &AVirusCharacter::StopAiming);
 
+		//Select
+		EnhancedInputComponent->BindAction(SelectAction, ETriggerEvent::Started, this, &AVirusCharacter::Select);
+
 	}
 
 }
@@ -382,6 +385,11 @@ void AVirusCharacter::Heal(const FInputActionValue& Value)
 
 }
 
+void AVirusCharacter::Select(const FInputActionValue& Value)
+{
+	DropWeapon();
+}
+
 void AVirusCharacter::Aiming(const FInputActionValue& Value)
 {
 	bAiming = true;
@@ -524,6 +532,15 @@ void AVirusCharacter::EquipWeapon(AWeapon* WeaponToEquip)
 
 		EquippedWeapon = WeaponToEquip;
 		EquippedWeapon->SetItemState(EItemState::EIS_Equipped);
+	}
+}
+
+void AVirusCharacter::DropWeapon()
+{
+	if (EquippedWeapon)
+	{
+		FDetachmentTransformRules DetachmentTransformRules(EDetachmentRule::KeepWorld, true);
+		EquippedWeapon->GetItemMesh()->DetachFromComponent(DetachmentTransformRules);
 	}
 }
 

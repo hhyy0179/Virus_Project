@@ -57,6 +57,9 @@ class AVirusCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* AimingAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* SelectAction;
+
 	/** Montage for double jump */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UAnimMontage* DoubleJumpMontage;
@@ -172,6 +175,9 @@ protected:
 	/** Called for Healing input */
 	void Heal(const FInputActionValue& Value);
 
+	/** Called for Select input */
+	void Select(const FInputActionValue& Value);
+
 	void Aiming(const FInputActionValue& Value);
 	void StopAiming(const FInputActionValue& Value);
 
@@ -192,6 +198,9 @@ protected:
 
 	/** Takes a weapon and attaches it to the mesh */
 	void EquipWeapon(AWeapon* WeaponToEquip);
+
+	/**Detach weapon and let it fall to the ground */
+	void DropWeapon();
 
 protected:
 	// APawn interface
