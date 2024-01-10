@@ -181,6 +181,18 @@ protected:
 
 	void CalculateCrosshairSpread(float DeltaTime);
 
+	/** Line trace for items under the crosshairs */
+	bool TraceUnderCrosshairs(FHitResult& OutHitResult, FVector& OutHitLocation);
+
+	/** Trace for items if OverlappedItemCounts */
+	void TraceForItems();
+
+	/** Spawns a default weapon and equips it */
+	class AWeapon* SpawnDefaultWeapon();
+
+	/** Takes a weapon and attaches it to the mesh */
+	void EquipWeapon(AWeapon* WeaponToEquip);
+
 protected:
 	// APawn interface
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -194,6 +206,24 @@ protected:
 	class UNiagaraComponent* BeamInstance;
 	class UNiagaraComponent* FlashInstance;
 
+	/** True if we should trace every frame for items */
+	bool bShouldTraceForItems;
+	
+	/** Number of overlapped AItems */
+	int8 OverlappedItemCount;
+
+	/** The AItem we hit last frame */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Items", meta = (AllowPrivateAccess = "true"))
+	class AItem* TraceHitItemLastFrame;
+
+	/** Currently eqipped Weapon */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
+	AWeapon* EquippedWeapon;
+
+	/** Set this in Blurprints for the default weapon class */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
+	TSubclassOf<AWeapon> DefaultWeaponClass;
+
 public:
 	/** Returns CameraBoom subobject **/
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
@@ -206,6 +236,11 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	float GetCrosshairSpreadMultiplier() const;
+
+	FORCEINLINE int8 GetOverlappedItemCount() const { return OverlappedItemCount;  }
+
+	/** Adds/ Subtracts to/from Overlapped ItemCount and updates bShouldTrace for Items */
+	void IncrementOverlappedItemCount(int8 Amount);
 
 };
 
