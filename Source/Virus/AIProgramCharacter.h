@@ -47,6 +47,9 @@ public:
 	UWidgetComponent* HPBarWidgetComponent = nullptr;
 	UHPBarWidget* HPBar = nullptr;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	bool StopRoaming;
+
 	/** Current health of the enemy */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
 	float Health;
@@ -59,7 +62,7 @@ public:
 	FString HeadBone;
 
 	/** Time to display Health Bar once shot */
-	FTimerHandle HealthBarTimer;
+	FTimerHandle Timer;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"))
 	float HealthBarDisplayTime;
