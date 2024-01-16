@@ -47,6 +47,10 @@ public:
 	UWidgetComponent* HPBarWidgetComponent = nullptr;
 	UHPBarWidget* HPBar = nullptr;
 
+	UAnimSequence* DieAnim;
+
+	float DieAnimTime = 2.75f;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	bool StopRoaming;
 
