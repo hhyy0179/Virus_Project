@@ -1,0 +1,74 @@
+Begin Object Class=/Script/EnhancedInput.InputMappingContext Name="IMC_Default"
+   Begin Object Class=/Script/EnhancedInput.InputModifierDeadZone Name="InputModifierDeadZone_0"
+   End Object
+   Begin Object Class=/Script/EnhancedInput.InputModifierDeadZone Name="InputModifierDeadZone_1"
+   End Object
+   Begin Object Class=/Script/EnhancedInput.InputModifierNegate Name="InputModifierNegate_0"
+   End Object
+   Begin Object Class=/Script/EnhancedInput.InputModifierNegate Name="InputModifierNegate_2"
+   End Object
+   Begin Object Class=/Script/EnhancedInput.InputModifierNegate Name="InputModifierNegate_3"
+   End Object
+   Begin Object Class=/Script/EnhancedInput.InputModifierNegate Name="InputModifierNegate_5"
+   End Object
+   Begin Object Class=/Script/EnhancedInput.InputModifierNegate Name="InputModifierNegate_6"
+   End Object
+   Begin Object Class=/Script/EnhancedInput.InputModifierScalar Name="InputModifierScalar_0"
+   End Object
+   Begin Object Class=/Script/EnhancedInput.InputModifierSwizzleAxis Name="InputModifierSwizzleAxis_3"
+   End Object
+   Begin Object Class=/Script/EnhancedInput.InputModifierSwizzleAxis Name="InputModifierSwizzleAxis_4"
+   End Object
+   Begin Object Class=/Script/EnhancedInput.InputModifierSwizzleAxis Name="InputModifierSwizzleAxis_5"
+   End Object
+   Begin Object Class=/Script/EnhancedInput.InputModifierSwizzleAxis Name="InputModifierSwizzleAxis_6"
+   End Object
+   Begin Object Class=/Script/EnhancedInput.InputTriggerDown Name="InputTriggerDown_1"
+   End Object
+   Begin Object Name="InputModifierDeadZone_0"
+   End Object
+   Begin Object Name="InputModifierDeadZone_1"
+   End Object
+   Begin Object Name="InputModifierNegate_0"
+   End Object
+   Begin Object Name="InputModifierNegate_2"
+   End Object
+   Begin Object Name="InputModifierNegate_3"
+   End Object
+   Begin Object Name="InputModifierNegate_5"
+      bX=False
+      bZ=False
+   End Object
+   Begin Object Name="InputModifierNegate_6"
+   End Object
+   Begin Object Name="InputModifierScalar_0"
+      Scalar=(X=50.000000,Y=50.000000,Z=1.000000)
+   End Object
+   Begin Object Name="InputModifierSwizzleAxis_3"
+   End Object
+   Begin Object Name="InputModifierSwizzleAxis_4"
+   End Object
+   Begin Object Name="InputModifierSwizzleAxis_5"
+   End Object
+   Begin Object Name="InputModifierSwizzleAxis_6"
+   End Object
+   Begin Object Name="InputTriggerDown_1"
+   End Object
+   Mappings(0)=(Action=/Script/EnhancedInput.InputAction'"/Game/_VirusGame/Character/Input/Actions/IA_Jump.IA_Jump"',Key=SpaceBar)
+   Mappings(1)=(PlayerMappableOptions=(Name="IA_Jump",DisplayName=NSLOCTEXT("", "3ADE89704924C51095DC89A9A6884C4B", "IA_Jump")),Action=/Script/EnhancedInput.InputAction'"/Game/_VirusGame/Character/Input/Actions/IA_Jump.IA_Jump"',Key=Gamepad_FaceButton_Bottom)
+   Mappings(2)=(Modifiers=(/Script/EnhancedInput.InputModifierSwizzleAxis'"InputModifierSwizzleAxis_3"'),Action=/Script/EnhancedInput.InputAction'"/Game/_VirusGame/Character/Input/Actions/IA_Move.IA_Move"',Key=W)
+   Mappings(3)=(PlayerMappableOptions=(Name="IA_MoveForwardBackward",DisplayName=NSLOCTEXT("", "7270C8C24E6996FE79E848A46575661C", "IA_MoveForwardBackward")),Modifiers=(/Script/EnhancedInput.InputModifierSwizzleAxis'"InputModifierSwizzleAxis_4"',/Script/EnhancedInput.InputModifierNegate'"InputModifierNegate_0"'),Action=/Script/EnhancedInput.InputAction'"/Game/_VirusGame/Character/Input/Actions/IA_Move.IA_Move"',Key=S)
+   Mappings(4)=(PlayerMappableOptions=(Name="IA_Move",DisplayName=NSLOCTEXT("", "B499B9EF44E521EB746966AE530AE23D", "IA_Move")),Modifiers=(/Script/EnhancedInput.InputModifierNegate'"InputModifierNegate_3"'),Action=/Script/EnhancedInput.InputAction'"/Game/_VirusGame/Character/Input/Actions/IA_Move.IA_Move"',Key=A)
+   Mappings(5)=(PlayerMappableOptions=(Name="IA_Move",DisplayName=NSLOCTEXT("", "5E9D6D804F6C648BF2F433830A0A3A1D", "IA_Move")),Action=/Script/EnhancedInput.InputAction'"/Game/_VirusGame/Character/Input/Actions/IA_Move.IA_Move"',Key=D)
+   Mappings(6)=(PlayerMappableOptions=(Name="IA_MoveForwardBackward",DisplayName=NSLOCTEXT("", "E1C1284A43FD1A1D4F084C9004EF909D", "IA_MoveForwardBackward")),Modifiers=(/Script/EnhancedInput.InputModifierSwizzleAxis'"InputModifierSwizzleAxis_5"'),Action=/Script/EnhancedInput.InputAction'"/Game/_VirusGame/Character/Input/Actions/IA_Move.IA_Move"',Key=Up)
+   Mappings(7)=(PlayerMappableOptions=(Name="IA_MoveForwardBackward",DisplayName=NSLOCTEXT("", "F0F307E14B15EE51E50C0CAB48F5B628", "IA_MoveForwardBackward")),Modifiers=(/Script/EnhancedInput.InputModifierSwizzleAxis'"InputModifierSwizzleAxis_6"',/Script/EnhancedInput.InputModifierNegate'"InputModifierNegate_2"'),Action=/Script/EnhancedInput.InputAction'"/Game/_VirusGame/Character/Input/Actions/IA_Move.IA_Move"',Key=Down)
+   Mappings(8)=(PlayerMappableOptions=(Name="IA_Move",DisplayName=NSLOCTEXT("", "1564BC344FE34FCF3E30A7925FDDCCAA", "IA_Move")),Action=/Script/EnhancedInput.InputAction'"/Game/_VirusGame/Character/Input/Actions/IA_Move.IA_Move"',Key=Right)
+   Mappings(9)=(PlayerMappableOptions=(Name="IA_Move",DisplayName=NSLOCTEXT("", "ECBC7AF44CA2F5D8ADAD12929DE6B6CC", "IA_Move")),Modifiers=(/Script/EnhancedInput.InputModifierNegate'"InputModifierNegate_6"'),Action=/Script/EnhancedInput.InputAction'"/Game/_VirusGame/Character/Input/Actions/IA_Move.IA_Move"',Key=Left)
+   Mappings(10)=(PlayerMappableOptions=(Name="IA_MoveForwardBackward",DisplayName=NSLOCTEXT("", "C39A97284653CB2ACB5046A4D3EFA923", "IA_MoveForwardBackward")),Modifiers=(/Script/EnhancedInput.InputModifierDeadZone'"InputModifierDeadZone_0"',/Script/EnhancedInput.InputModifierScalar'"InputModifierScalar_0"'),Action=/Script/EnhancedInput.InputAction'"/Game/_VirusGame/Character/Input/Actions/IA_Move.IA_Move"',Key=Gamepad_Left2D)
+   Mappings(11)=(Modifiers=(/Script/EnhancedInput.InputModifierNegate'"InputModifierNegate_5"'),Action=/Script/EnhancedInput.InputAction'"/Game/_VirusGame/Character/Input/Actions/IA_Look.IA_Look"',Key=Mouse2D)
+   Mappings(12)=(PlayerMappableOptions=(Name="IA_LookUpDown",DisplayName=NSLOCTEXT("", "75E38CCE41DB44586F19198A700F3DBC", "IA_LookUpDown")),Modifiers=(/Script/EnhancedInput.InputModifierDeadZone'"InputModifierDeadZone_1"'),Action=/Script/EnhancedInput.InputAction'"/Game/_VirusGame/Character/Input/Actions/IA_Look.IA_Look"',Key=Gamepad_Right2D)
+   Mappings(13)=(PlayerMappableOptions=(Name="IA_Jump",DisplayName=NSLOCTEXT("", "709EBFE546D61B9257E4B7B3577B2B44", "IA_Jump")),Action=/Script/EnhancedInput.InputAction'"/Game/_VirusGame/Character/Input/Actions/IA_Jump.IA_Jump"',Key=Touch1)
+   Mappings(14)=(Action=/Script/EnhancedInput.InputAction'"/Game/_VirusGame/Character/Input/Actions/IA_Scan.IA_Scan"',Key=LeftMouseButton)
+   Mappings(15)=(Action=/Script/EnhancedInput.InputAction'"/Game/_VirusGame/Character/Input/Actions/IA_Heal.IA_Heal"',Key=F)
+   Mappings(16)=(Triggers=(/Script/EnhancedInput.InputTriggerDown'"InputTriggerDown_1"'),Action=/Script/EnhancedInput.InputAction'"/Game/_VirusGame/Character/Input/Actions/IA_Aiming.IA_Aiming"',Key=RightMouseButton)
+End Object

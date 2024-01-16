@@ -4,10 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "AIProgramCharacter.h"
 #include "AIBaseCharacter.generated.h"
 
 UCLASS()
-class VIRUS_API AAIBaseCharacter : public ACharacter
+class VIRUS_API AAIBaseCharacter : public AAIProgramCharacter
 {
 	GENERATED_BODY()
 

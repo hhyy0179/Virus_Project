@@ -57,6 +57,9 @@ class AVirusCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* AimingAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* SelectAction;
+
 	/** Montage for double jump */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UAnimMontage* DoubleJumpMontage;
@@ -91,6 +94,7 @@ class AVirusCharacter : public ACharacter
 
 	/** Current field of view this frame */
 	float CameraCurrentFOV;
+
 
 	/** Interp speed for zooming when aiming */
 	//UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
@@ -142,6 +146,37 @@ class AVirusCharacter : public ACharacter
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Crosshairs, meta = (AllowPrivateAccess = "true"))
 	float CrosshairShootingFactor;
 
+	/** True if we should trace every frame for items */
+	bool bShouldTraceForItems;
+
+	/** Number of overlapped AItems */
+	int8 OverlappedItemCount;
+
+	/** The AItem we hit last frame */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Items", meta = (AllowPrivateAccess = "true"))
+	class AItem* TraceHitItemLastFrame;
+
+	/** Currently eqipped Weapon */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
+	class AWeapon* EquippedWeapon;
+
+	/** Set this in Blurprints for the default weapon class */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
+	TSubclassOf<AWeapon> DefaultWeaponClass;
+
+	/** The item currently hit by out trace in TraceForItems (could be null) */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
+	AItem* TraceHitItem;
+
+	/** Distance upward from the camera for the interp destination */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Items, meta = (AllowPrivateAccess = "true"))
+	float CameraInterpDistance;
+
+	/** Distance upward from the camera for the interp destination */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Items, meta = (AllowPrivateAccess = "true"))
+	float CameraInterpElevation;
+
+	
 
 public:
 	AVirusCharacter();
@@ -151,6 +186,8 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Controller")
 	class AVirusPlayerController* VirusPlayerController;
+
+	void GetPickUpItem(AItem* Item);
 
 protected:
 
@@ -169,6 +206,10 @@ protected:
 	/** Called for Healing input */
 	void Heal(const FInputActionValue& Value);
 
+	/** Called for Select input */
+	void Select(const FInputActionValue& Value);
+	void StopSelect(const FInputActionValue& Value);
+
 	void Aiming(const FInputActionValue& Value);
 	void StopAiming(const FInputActionValue& Value);
 
@@ -178,7 +219,24 @@ protected:
 
 	void CalculateCrosshairSpread(float DeltaTime);
 
-			
+	/** Line trace for items under the crosshairs */
+	bool TraceUnderCrosshairs(FHitResult& OutHitResult, FVector& OutHitLocation);
+
+	/** Trace for items if OverlappedItemCounts */
+	void TraceForItems();
+
+	/** Spawns a default weapon and equips it */
+	AWeapon* SpawnDefaultWeapon();
+
+	/** Takes a weapon and attaches it to the mesh */
+	void EquipWeapon(AWeapon* WeaponToEquip);
+
+	/**Detach weapon and let it fall to the ground */
+	void DropWeapon();
+
+	/** Drops currently equipped Weapon and Equips TraceHitItem */
+	void SwapWeapon(AWeapon* WeaponToSwap);
+
 protected:
 	// APawn interface
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -187,6 +245,9 @@ protected:
 	virtual void BeginPlay();
 
 	virtual void Tick(float DeltaTime);
+
+
+
 
 public:
 	/** Returns CameraBoom subobject **/
@@ -201,5 +262,11 @@ public:
 	UFUNCTION(BlueprintCallable)
 	float GetCrosshairSpreadMultiplier() const;
 
+	FORCEINLINE int8 GetOverlappedItemCount() const { return OverlappedItemCount;  }
+
+	/** Adds/ Subtracts to/from Overlapped ItemCount and updates bShouldTrace for Items */
+	void IncrementOverlappedItemCount(int8 Amount);
+
+	FVector GetCameraInterpLocation();
 };
 
