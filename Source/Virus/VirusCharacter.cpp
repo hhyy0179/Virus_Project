@@ -30,6 +30,7 @@
 // AVirusCharacter
 
 
+
 AVirusCharacter::AVirusCharacter() :
 	bAiming(false),
 	MaxHP(100.0f),
@@ -44,7 +45,13 @@ AVirusCharacter::AVirusCharacter() :
 	HipLookRate(1.f),
 	AimingLookRate(0.4f),
 
-	bShouldTraceForItems(false)
+	bShouldTraceForItems(false),
+	OverlappedItemCount(0),
+
+	//Camerainterp location variables
+	CameraInterpDistance(250.f),
+	CameraInterpElevation(65.f)
+
 {
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
@@ -154,7 +161,7 @@ void AVirusCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInp
 		//EnhancedInputComponent->BindAction(ScanAction, ETriggerEvent::Completed, this, &AVirusCharacter::StopScan);
 
 		//Heal
-		EnhancedInputComponent->BindAction(HealAction, ETriggerEvent::Started, this, &AVirusCharacter::Heal);
+		//EnhancedInputComponent->BindAction(HealAction, ETriggerEvent::Started, this, &AVirusCharacter::Heal);
 
 		//Aiming
 		EnhancedInputComponent->BindAction(AimingAction, ETriggerEvent::Started, this, &AVirusCharacter::Aiming);
@@ -162,6 +169,7 @@ void AVirusCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInp
 
 		//Select
 		EnhancedInputComponent->BindAction(SelectAction, ETriggerEvent::Started, this, &AVirusCharacter::Select);
+		EnhancedInputComponent->BindAction(SelectAction, ETriggerEvent::Completed, this, &AVirusCharacter::StopSelect);
 
 	}
 
@@ -247,8 +255,8 @@ void AVirusCharacter::Scan(const FInputActionValue& Value)
 
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 
-	//if (!bisDoubleJump)
-	//{
+	if (!bisDoubleJump && EquippedWeapon)
+	{
 		if (Controller != nullptr && FireSound)
 		{
 			//UE_LOG(LogTemp, Warning, TEXT("Attack"));
@@ -265,10 +273,10 @@ void AVirusCharacter::Scan(const FInputActionValue& Value)
 		if (BarrelSocket)
 		{
 			FTransform SocketTransform = BarrelSocket->GetSocketTransform(GetMesh());
-
+			LaserFlash = EquippedWeapon->GetLaserFlash();
 			if (LaserFlash)
 			{
-				FlashInstance = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), LaserFlash, SocketTransform.GetLocation());
+				UNiagaraComponent* FlashInstance = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), LaserFlash, SocketTransform.GetLocation());
 				FlashInstance->Activate();
 
 			}
@@ -304,19 +312,21 @@ void AVirusCharacter::Scan(const FInputActionValue& Value)
 					}
 					else
 					{
+						ImpactParticles = EquippedWeapon->GetImpactParticles();
 						//Spawn default particles
 						if (ImpactParticles)
 						{
-							EndHitInstance = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), ImpactParticles, BeamHitResult.Location);
+							UNiagaraComponent* EndHitInstance = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), ImpactParticles, BeamHitResult.Location);
 							EndHitInstance->Activate();
 
 						}
 					}
 				}
 
+				BeamParticles = EquippedWeapon->GetBeamParticles();
 				if (BeamParticles)
 				{
-					BeamInstance = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), BeamParticles, SocketTransform.GetLocation());
+					UNiagaraComponent* BeamInstance = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), BeamParticles, SocketTransform.GetLocation());
 
 					if (BeamInstance)
 					{
@@ -329,8 +339,8 @@ void AVirusCharacter::Scan(const FInputActionValue& Value)
 
 			}
 
-			
 		}
+	}
 }
 
 bool AVirusCharacter::GetBeamEndLocation(const FVector& MuzzleSocketLocation, FHitResult& OutHitResult)
@@ -387,7 +397,16 @@ void AVirusCharacter::Heal(const FInputActionValue& Value)
 
 void AVirusCharacter::Select(const FInputActionValue& Value)
 {
-	DropWeapon();
+	if (TraceHitItem)
+	{
+
+		TraceHitItem->StartItemCurve(this);
+	}
+	
+}
+
+void AVirusCharacter::StopSelect(const FInputActionValue& Value)
+{
 }
 
 void AVirusCharacter::Aiming(const FInputActionValue& Value)
@@ -472,25 +491,24 @@ void AVirusCharacter::TraceForItems()
 		TraceUnderCrosshairs(ItemTraceResult, HitLocation);
 		if (ItemTraceResult.bBlockingHit)
 		{
-			AItem* HitItem = Cast<AItem>(ItemTraceResult.GetActor());
-			if (HitItem && HitItem->GetPickUpWidget() && HitItem->IsOverlappingActor(this))
+			TraceHitItem = Cast<AItem>(ItemTraceResult.GetActor());
+			if (TraceHitItem && TraceHitItem->GetPickUpWidget() && TraceHitItem->IsOverlappingActor(this))
 			{
 				//Show Item's PickupWidget
-				HitItem->GetPickUpWidget()->SetVisibility(true);
-
+				TraceHitItem->GetPickUpWidget()->SetVisibility(true);
 			}
 
 			// We hit an AItem last frame
 			if (TraceHitItemLastFrame)
 			{
-				if (HitItem != TraceHitItemLastFrame)
+				if (TraceHitItem != TraceHitItemLastFrame)
 				{
 					//We are hitting a different AItem this frame from last frame Or AItem is null
 					TraceHitItemLastFrame->GetPickUpWidget()->SetVisibility(false);
 				}
 			}
 			//store a reference to HitItem for next frame
-			TraceHitItemLastFrame = HitItem;
+			TraceHitItemLastFrame = TraceHitItem;
 		}
 	}
 	else if(TraceHitItemLastFrame)
@@ -541,7 +559,18 @@ void AVirusCharacter::DropWeapon()
 	{
 		FDetachmentTransformRules DetachmentTransformRules(EDetachmentRule::KeepWorld, true);
 		EquippedWeapon->GetItemMesh()->DetachFromComponent(DetachmentTransformRules);
+
+		EquippedWeapon->SetItemState(EItemState::EIS_Falling);
+		EquippedWeapon->ThrowWeapon();
 	}
+}
+
+void AVirusCharacter::SwapWeapon(AWeapon* WeaponToSwap)
+{
+	DropWeapon();
+	EquipWeapon(WeaponToSwap);
+	TraceHitItem = nullptr;
+	TraceHitItemLastFrame = nullptr;
 }
 
 void AVirusCharacter::Tick(float DeltaTime)
@@ -575,5 +604,24 @@ void AVirusCharacter::IncrementOverlappedItemCount(int8 Amount)
 	{
 		OverlappedItemCount += Amount;
 		bShouldTraceForItems = true;
+	}
+}
+
+FVector AVirusCharacter::GetCameraInterpLocation()
+{
+	const FVector CameraWorldLocation{ FollowCamera->GetComponentLocation() };
+	const FVector CameraForward { FollowCamera->GetForwardVector() };
+
+	//Desired = CameraWorldLocation + Forward*A + Up*B
+	return CameraWorldLocation + CameraForward * CameraInterpDistance
+			+ FVector(0.f, 0.f, CameraInterpElevation);
+}
+
+void AVirusCharacter::GetPickUpItem(AItem* Item)
+{
+	auto Weapon = Cast<AWeapon>(Item);
+	if (Weapon)
+	{
+		SwapWeapon(Weapon);
 	}
 }

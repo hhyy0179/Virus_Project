@@ -41,6 +41,13 @@ protected:
 	void OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
 	void SetItemProperties(EItemState State);
+
+	/** Called when ItemInterpTimer is finished */
+	void FinishInterping();
+
+	/** Handles item interpolation when in the EquipInterping state */
+	void ItemInterp(float DeltaTime);
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -71,6 +78,48 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Item Properties", meta = (AllowPrivateAccess = "true"))
 	EItemState ItemState;
 
+	/** Flash spawned at BarrelSocket */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Item Properties", meta = (AllowPrivateAccess = "true"))
+	class UNiagaraSystem* LaserFlash;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Item Properties", meta = (AllowPrivateAccess = "true"))
+	class UNiagaraSystem* ImpactParticles;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Item Properties", meta = (AllowPrivateAccess = "true"))
+	class UNiagaraSystem* BeamParticles;
+
+	/** The Curve asset to use for the item's Z location when interping */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Item Properties", meta = (AllowPrivateAccess = "true"))
+	class UCurveFloat* ItemZCurve;
+
+	/** Starting location when interping begins */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Item Properties", meta = (AllowPrivateAccess = "true"))
+	FVector ItemInterpStartLocation;
+
+	/** Target interp location in front of the camera */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Item Properties", meta = (AllowPrivateAccess = "true"))
+	FVector CameraTargetLocation;
+
+	/** true when interping */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Item Properties", meta = (AllowPrivateAccess = "true"))
+	bool binterping;
+
+	/** Plays when we start interping */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Item Properties", meta = (AllowPrivateAccess = "true"))
+	FTimerHandle ItemInterpTimer;
+
+	/** Duration of the Curve and Timer */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Item Properties", meta = (AllowPrivateAccess = "true"))
+	float ZCurveTime;
+
+	/** Pointer to the Character */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Item Properties", meta = (AllowPrivateAccess = "true"))
+	class AVirusCharacter* Character;
+
+	/** X and Y for the Item while interping in the EquipInterping State */
+	float ItemInterpX;
+	float ItemInterpY;
+
 public: 
 	//Define Getter or Setter
 	FORCEINLINE UWidgetComponent* GetPickUpWidget() const { return PickUpWidget; }
@@ -79,4 +128,10 @@ public:
 	FORCEINLINE EItemState GetItemState() const { return ItemState; }
 	void SetItemState(EItemState State);
 	FORCEINLINE USkeletalMeshComponent* GetItemMesh() const { return ItemMesh; }
+	FORCEINLINE UNiagaraSystem* GetLaserFlash() const { return LaserFlash; }
+	FORCEINLINE UNiagaraSystem* GetImpactParticles() const { return ImpactParticles; }
+	FORCEINLINE UNiagaraSystem* GetBeamParticles() const { return BeamParticles; }
+
+	/** Called from the AVirusCharacter class */
+	void StartItemCurve(AVirusCharacter* Char);
 };
