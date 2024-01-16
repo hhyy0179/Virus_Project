@@ -50,14 +50,16 @@ void AAIProgramCharacter::BeginPlay() {
 	Health = MaxHealth;
 	GetWidgetComponentFromActor();
 	HideHealthBar();
+
+	StopRoaming = false;
 }
 
 void AAIProgramCharacter::ShowHealthBar()
 {	
 	HPBarWidgetComponent->SetVisibility(true);
 	HPBar->SetPercent(Health / MaxHealth);
-	GetWorldTimerManager().ClearTimer(HealthBarTimer);
-	GetWorldTimerManager().SetTimer(HealthBarTimer, this, &AAIProgramCharacter::HideHealthBar, HealthBarDisplayTime);
+	GetWorldTimerManager().ClearTimer(Timer);
+	GetWorldTimerManager().SetTimer(Timer, this, &AAIProgramCharacter::HideHealthBar, HealthBarDisplayTime);
 }
 
 void AAIProgramCharacter::HideHealthBar()
@@ -112,9 +114,12 @@ void AAIProgramCharacter::ShowHealthBar_Implementation()
 
 void AAIProgramCharacter::Die()
 {
+	StopRoaming = true;
+
 	HideHealthBar();
-	CloneActor();
-	GetWorld()->DestroyActor(this);
+	GetMesh()->Stop();
+	GetWorldTimerManager().ClearTimer(Timer);
+	GetWorldTimerManager().SetTimer(Timer, this, &AAIProgramCharacter::CloneActor, 3.f);
 }
 
 void AAIProgramCharacter::CloneActor()
@@ -129,6 +134,8 @@ void AAIProgramCharacter::CloneActor()
 	{
 		FTransform ActorTransform = this->GetActorTransform();
 		this->SetActorLocation(FVector(0.f, 0.f, 0.f));
+
+		GetWorld()->DestroyActor(this);
 
 		// 货肺款 咀磐 积己
 		AAIAllyCharacter* NewActor = GetWorld()->SpawnActor<AAIAllyCharacter>(GeneratedBP->GeneratedClass, ActorTransform);
