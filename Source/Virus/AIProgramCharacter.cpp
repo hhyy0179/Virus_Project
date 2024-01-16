@@ -17,6 +17,7 @@
 #include "HPBarWidget.h"
 #include "UObject/ConstructorHelpers.h"
 #include "AIAllyCharacter.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 AAIProgramCharacter::AAIProgramCharacter():
 	MaxHealth(100.f),
@@ -25,8 +26,18 @@ AAIProgramCharacter::AAIProgramCharacter():
 {
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-
+	
 	Health = MaxHealth;
+
+	static ConstructorHelpers::FObjectFinder<UAnimSequence> anim(TEXT("/Game/_VirusGame/AI/AIProgramCharacter/Anim_AIProgram/NewWalking/Mutant_Dying.Mutant_Dying"));
+	
+	if (anim.Succeeded()) {
+		DieAnim = anim.Object;
+	}
+	else {
+		UE_LOG(LogTemp, Warning, TEXT("This is Null Animation"));
+	}
+
 
 	/*HealthBarWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("HealthBar"));
 
@@ -116,10 +127,13 @@ void AAIProgramCharacter::Die()
 {
 	StopRoaming = true;
 
+	GetCharacterMovement()->MaxWalkSpeed = 0.f;
+
+	GetMesh()->PlayAnimation(DieAnim, false);
+
 	HideHealthBar();
-	GetMesh()->Stop();
 	GetWorldTimerManager().ClearTimer(Timer);
-	GetWorldTimerManager().SetTimer(Timer, this, &AAIProgramCharacter::CloneActor, 3.f);
+	GetWorldTimerManager().SetTimer(Timer, this, &AAIProgramCharacter::CloneActor, DieAnimTime);
 }
 
 void AAIProgramCharacter::CloneActor()
