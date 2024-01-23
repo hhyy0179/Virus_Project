@@ -172,6 +172,8 @@ void AAIProgramCharacter::BulletHit_Implementation(FHitResult HitResult)
 
 void AAIProgramCharacter::BulletHit(FHitResult HitResult, float Damage)
 {
+	ShowHealthBar();
+
 	Health -= Damage;
 
 	if (ImpactSound)
@@ -190,6 +192,10 @@ void AAIProgramCharacter::BulletHit(FHitResult HitResult, float Damage)
 
 float AAIProgramCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
+	UE_LOG(LogTemp, Warning, TEXT("Current Health: %f"), Health);
+
+	ShowHealthBar();
+
 	if (Health - DamageAmount <= 0.f)
 	{
 		Die();
@@ -207,6 +213,8 @@ void AAIProgramCharacter::TakeDamage(float DamageAmount)
 {
 	Health -= DamageAmount;
 
+	UE_LOG(LogTemp, Warning, TEXT("Current Health: %f"), Health);
+
 	if (ImpactSound)
 	{
 		UGameplayStatics::PlaySoundAtLocation(this, ImpactSound, GetActorLocation());
@@ -214,7 +222,7 @@ void AAIProgramCharacter::TakeDamage(float DamageAmount)
 
 	ShowHealthBar();
 
-	if (Health >= 0) {
+	if (Health <= 0) {
 		Die();
 	}
 }

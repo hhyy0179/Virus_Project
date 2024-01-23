@@ -102,6 +102,10 @@ void AAIVaccineCharacter2::Tick(float DeltaTime)
 
 float AAIVaccineCharacter2::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
+	UE_LOG(LogTemp, Warning, TEXT("Current Health: %f"), Health);
+
+	ShowHealthBar();
+
 	if (Health - DamageAmount <= 0.f)
 	{
 		Die();

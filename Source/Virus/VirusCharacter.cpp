@@ -25,6 +25,7 @@
 #include "Components/SphereComponent.h"
 #include "Item.h"
 #include "Weapon.h"
+#include "AIVaccineCharacter2.h"
 
 //////////////////////////////////////////////////////////////////////////
 // AVirusCharacter
@@ -300,25 +301,33 @@ void AVirusCharacter::Scan(const FInputActionValue& Value)
 						//Head Shot
 						if (BeamHitResult.BoneName.ToString() == HitProgram->GetHeadBone())
 						{
-							UGameplayStatics::ApplyDamage(BeamHitResult.GetActor(), 50.f, GetController(), this, UDamageType::StaticClass());
+							UGameplayStatics::ApplyDamage(BeamHitResult.GetActor(), HeadShotDamage, GetController(), this, UDamageType::StaticClass());
 						}
 						//Body Shot
 						else
 						{
-							UGameplayStatics::ApplyDamage(BeamHitResult.GetActor(), 20.f, GetController(), this, UDamageType::StaticClass());
+							UGameplayStatics::ApplyDamage(BeamHitResult.GetActor(), BodyShotDamage, GetController(), this, UDamageType::StaticClass());
 						}
 
 						UE_LOG(LogTemp, Warning, TEXT("Hit Component: %s"), *BeamHitResult.BoneName.ToString());
 					}
 					else
 					{
-						ImpactParticles = EquippedWeapon->GetImpactParticles();
-						//Spawn default particles
-						if (ImpactParticles)
+						AAIVaccineCharacter2* HitVaccine = Cast<AAIVaccineCharacter2>(BeamHitResult.GetActor());
+						if (HitVaccine)
 						{
-							UNiagaraComponent* EndHitInstance = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), ImpactParticles, BeamHitResult.Location);
-							EndHitInstance->Activate();
+							UGameplayStatics::ApplyDamage(BeamHitResult.GetActor(), BodyShotDamage, GetController(), this, UDamageType::StaticClass());
+						}
+						else
+						{
+							ImpactParticles = EquippedWeapon->GetImpactParticles();
+							//Spawn default particles
+							if (ImpactParticles)
+							{
+								UNiagaraComponent* EndHitInstance = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), ImpactParticles, BeamHitResult.Location);
+								EndHitInstance->Activate();
 
+							}
 						}
 					}
 				}

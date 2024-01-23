@@ -124,6 +124,12 @@ class AVirusCharacter : public ACharacter
 	float CurrentHP;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Stats", meta = (AllowPrivateAccess = "true"))
+	float HeadShotDamage = 1.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Stats", meta = (AllowPrivateAccess = "true"))
+	float BodyShotDamage = 1.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Stats", meta = (AllowPrivateAccess = "true"))
 	bool bisDoubleJump;
 
 	/** Determines the spread of the crosshairs */
