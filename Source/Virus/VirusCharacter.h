@@ -9,6 +9,9 @@
 #include "VirusCharacter.generated.h"
 
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FEquipItemDelegate, int32, CurrentSlotIndex, int32, NewSlotIndex);
+
+
 UCLASS(config=Game)
 class AVirusCharacter : public ACharacter
 {
@@ -30,8 +33,6 @@ class AVirusCharacter : public ACharacter
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	float AimingLookRate;
 
-
-	
 	/** MappingContext */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputMappingContext* DefaultMappingContext;
@@ -151,11 +152,7 @@ class AVirusCharacter : public ACharacter
 
 	/** Number of overlapped AItems */
 	int8 OverlappedItemCount;
-
-	/** The AItem we hit last frame */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Items", meta = (AllowPrivateAccess = "true"))
-	class AItem* TraceHitItemLastFrame;
-
+	
 	/** Currently eqipped Weapon */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
 	class AWeapon* EquippedWeapon;
@@ -166,28 +163,37 @@ class AVirusCharacter : public ACharacter
 
 	/** The item currently hit by out trace in TraceForItems (could be null) */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
-	AItem* TraceHitItem;
+	class AItem* TraceHitItem;
+
+	/** The AItem we hit last frame */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Items, meta = (AllowPrivateAccess = "true"))
+	AItem* TraceHitItemLastFrame;
 
 	/** Distance upward from the camera for the interp destination */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Items, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Items, meta = (AllowPrivateAccess = "true"))
 	float CameraInterpDistance;
 
 	/** Distance upward from the camera for the interp destination */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Items, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Items, meta = (AllowPrivateAccess = "true"))
 	float CameraInterpElevation;
 
-	
+	FTimerHandle PickupSoundTimer;
+	bool bShouldPlayPickupSound;
+	void ResetPickupSoundTimer();
 
-public:
-	AVirusCharacter();
+	/** Time to wait before we can play another Pickup Sound */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Items, meta = (AllowPrivateAccess = "true"))
+	float PickupSoundResetTime;
 
-	UFUNCTION(BlueprintCallable)
-	float GetHP();
+	/** An array of AItem for our Inventory */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Inventory, meta = (AllowPrivateAccess = "true"))
+	TArray<AItem*> Inventory;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Controller")
-	class AVirusPlayerController* VirusPlayerController;
+	const int32 INVENTORY_CAPACITY{ 5 };
 
-	void GetPickUpItem(AItem* Item);
+	/** Delegate for sending slot information to InventoryBar when equipping */
+	UPROPERTY(BlueprintAssignable, Category = Delegates, meta = (AllowPrivateAccess = "true"))
+	FEquipItemDelegate EquipItemDelegate;
 
 protected:
 
@@ -237,7 +243,12 @@ protected:
 	/** Drops currently equipped Weapon and Equips TraceHitItem */
 	void SwapWeapon(AWeapon* WeaponToSwap);
 
-protected:
+	/**Check to make sure our weapon has gage  */
+	bool WeaponHasGage();
+
+public:
+	AVirusCharacter();
+
 	// APawn interface
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	
@@ -246,10 +257,13 @@ protected:
 
 	virtual void Tick(float DeltaTime);
 
+	UFUNCTION(BlueprintCallable)
+	float GetHP();
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Controller")
+	class AVirusPlayerController* VirusPlayerController;
 
 
-
-public:
 	/** Returns CameraBoom subobject **/
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 	/** Returns FollowCamera subobject **/
@@ -268,5 +282,9 @@ public:
 	void IncrementOverlappedItemCount(int8 Amount);
 
 	FVector GetCameraInterpLocation();
+
+	void GetPickUpItem(AItem* Item);
+
+	FORCEINLINE bool ShouldPlayPickupSound() const { return bShouldPlayPickupSound; }
 };
 

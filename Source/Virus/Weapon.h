@@ -24,9 +24,18 @@ private:
 	FTimerHandle ThrowWeaponTimer;
 	float ThrowWeaponTime;
 	bool bFalling;
+
+	/** Gage Amount for this Weapon */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Weapon Properties", meta = (AllowPrivateAccess ="true"))
+	float GageAmount;
+
 public:
 
 	/** Adds the impulse to the Weapon */
 	void ThrowWeapon();
 	
+	FORCEINLINE float GetGageAmount() const { return GageAmount; }
+
+	/** Called from Character class when firing weapon */
+	void DecrementGage();
 };

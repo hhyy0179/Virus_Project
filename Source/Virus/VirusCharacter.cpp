@@ -49,9 +49,9 @@ AVirusCharacter::AVirusCharacter() :
 	OverlappedItemCount(0),
 
 	//Camerainterp location variables
-	CameraInterpDistance(250.f),
-	CameraInterpElevation(65.f)
-
+	CameraInterpDistance(150.f),
+	CameraInterpElevation(45.f),
+	bShouldPlayPickupSound(true)
 {
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
@@ -62,7 +62,7 @@ AVirusCharacter::AVirusCharacter() :
 	bUseControllerRotationRoll = false;
 
 	// Configure character movement
-	GetCharacterMovement()->bOrientRotationToMovement = true; // Character moves in the direction of input...	
+	GetCharacterMovement()->bOrientRotationToMovement = true; // Charactser moves in the direction of input...	
 	GetCharacterMovement()->RotationRate = FRotator(0.0f, 540.0f, 0.0f); // ...at this rotation rate
 
 	// Note: For faster iteration times these variables, and many more, can be tweaked in the Character Blueprint
@@ -131,6 +131,7 @@ void AVirusCharacter::BeginPlay()
 
 	//Spawn the default weapon and attach it to the mesh
 	EquipWeapon(SpawnDefaultWeapon());
+	EquippedWeapon->DisableCustomDepth();
 }
 
 float AVirusCharacter::GetHP()
@@ -237,8 +238,8 @@ void AVirusCharacter::DoubleJump(const FInputActionValue& Value)
 			FRotator CharacterRotation = GetActorRotation(); 
 			FVector LaunchDirection = CharacterRotation.Vector(); 
 			LaunchDirection.Normalize(); // vector normallize
-			float LaunchStrength = 30.0f; 
-			LaunchDirection.Z = 25.0f;
+			float LaunchStrength = 25.0f; 
+			LaunchDirection.Z = 20.0f;
 
 			AnimInstance->Montage_Play(DoubleJumpMontage);
 			AnimInstance->Montage_JumpToSection(FName("DoubleJump"));
@@ -255,7 +256,7 @@ void AVirusCharacter::Scan(const FInputActionValue& Value)
 
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 
-	if (!bisDoubleJump && EquippedWeapon)
+	if (EquippedWeapon && WeaponHasGage())
 	{
 		if (Controller != nullptr && FireSound)
 		{
@@ -268,6 +269,9 @@ void AVirusCharacter::Scan(const FInputActionValue& Value)
 				AnimInstance->Montage_JumpToSection(FName("Attack"));
 			}
 		}
+
+		//Subtract 1 from the Weapon's Gage per 1 Frame
+		EquippedWeapon->DecrementGage();
 
 		const USkeletalMeshSocket* BarrelSocket = GetMesh()->GetSocketByName("BarrelSocket");
 		if (BarrelSocket)
@@ -496,6 +500,7 @@ void AVirusCharacter::TraceForItems()
 			{
 				//Show Item's PickupWidget
 				TraceHitItem->GetPickUpWidget()->SetVisibility(true);
+				TraceHitItem->EnableCustomDepth();
 			}
 
 			// We hit an AItem last frame
@@ -505,6 +510,7 @@ void AVirusCharacter::TraceForItems()
 				{
 					//We are hitting a different AItem this frame from last frame Or AItem is null
 					TraceHitItemLastFrame->GetPickUpWidget()->SetVisibility(false);
+					TraceHitItemLastFrame->DisableCustomDepth();
 				}
 			}
 			//store a reference to HitItem for next frame
@@ -516,6 +522,7 @@ void AVirusCharacter::TraceForItems()
 		//No longer overlapping any items,
 		//Items last frame should not show widget
 		TraceHitItemLastFrame->GetPickUpWidget()->SetVisibility(false);
+		TraceHitItemLastFrame->DisableCustomDepth();
 	}
 }
 
@@ -548,6 +555,15 @@ void AVirusCharacter::EquipWeapon(AWeapon* WeaponToEquip)
 			HandSocket->AttachActor(WeaponToEquip, GetMesh());
 		}
 
+		if (EquippedWeapon == nullptr)
+		{
+			//-1 == no EquippedWeapon yet. No need to reverse the icon animation
+			EquipItemDelegate.Broadcast(-1, WeaponToEquip->GetSlotIndex());
+		}
+		else
+		{
+			EquipItemDelegate.Broadcast(EquippedWeapon->GetSlotIndex(), WeaponToEquip->GetSlotIndex());
+		}
 		EquippedWeapon = WeaponToEquip;
 		EquippedWeapon->SetItemState(EItemState::EIS_Equipped);
 	}
@@ -571,6 +587,13 @@ void AVirusCharacter::SwapWeapon(AWeapon* WeaponToSwap)
 	EquipWeapon(WeaponToSwap);
 	TraceHitItem = nullptr;
 	TraceHitItemLastFrame = nullptr;
+}
+
+bool AVirusCharacter::WeaponHasGage()
+{
+	if (EquippedWeapon == nullptr) return false;
+
+	return EquippedWeapon->GetGageAmount() > 0.f;
 }
 
 void AVirusCharacter::Tick(float DeltaTime)
@@ -622,6 +645,16 @@ void AVirusCharacter::GetPickUpItem(AItem* Item)
 	auto Weapon = Cast<AWeapon>(Item);
 	if (Weapon)
 	{
-		SwapWeapon(Weapon);
+		if (Inventory.Num() < INVENTORY_CAPACITY)
+		{
+			Weapon->SetSlotIndex(Inventory.Num());
+			Inventory.Add(Weapon);
+			Weapon->SetItemState(EItemState::EIS_PickedUp);
+		}
+		else //Inventory is full swap with EquippedWeapon
+		{
+			SwapWeapon(Weapon);
+		}
+		
 	}
 }

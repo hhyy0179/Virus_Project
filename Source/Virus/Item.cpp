@@ -5,6 +5,7 @@
 #include "Components/BoxComponent.h"
 #include "Components/SphereComponent.h"
 #include "Components/WidgetComponent.h"
+#include "Camera/CameraComponent.h"
 #include "VirusCharacter.h"
 
 // Sets default values
@@ -19,7 +20,12 @@ AItem::AItem() :
 	binterping(false),
 
 	ItemInterpX(0.f),
-	ItemInterpY(0.f)
+	ItemInterpY(0.f),
+	InterpInitialYawOffset(0.f),
+
+	MaterialIndex(0),
+	ItemCount(2),
+	SlotIndex(0)
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -38,6 +44,8 @@ AItem::AItem() :
 
 	AreaSphere = CreateDefaultSubobject<USphereComponent>(TEXT("AreaSphere"));
 	AreaSphere->SetupAttachment(GetRootComponent());
+
+	
 }
 
 // Called when the game starts or when spawned
@@ -53,6 +61,9 @@ void AItem::BeginPlay()
 	AreaSphere->OnComponentEndOverlap.AddDynamic(this, &AItem::OnSphereEndOverlap);
 
 	SetItemProperties(ItemState);
+
+	//Set CustomDepth disables
+	InitializeCustomDepth();
 }
 
 void AItem::OnSphereBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
@@ -162,6 +173,27 @@ void AItem::SetItemProperties(EItemState State)
 		CollisionBox->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 		CollisionBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		break;
+
+	case EItemState::EIS_PickedUp:
+
+		PickUpWidget->SetVisibility(false);
+
+		//Set Mesh Properties
+		ItemMesh->SetSimulatePhysics(false);
+		ItemMesh->SetEnableGravity(false);
+		ItemMesh->SetVisibility(false);
+		ItemMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+		ItemMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+		//Set AreaSphere properties 
+		AreaSphere->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+		AreaSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+		//Set CollisionBox properties 
+		CollisionBox->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+		CollisionBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		break;
+
 	}
 
 }
@@ -173,6 +205,8 @@ void AItem::FinishInterping()
 	{
 		Character->GetPickUpItem(this);
 	}
+	//Set Scale back to normal
+	SetActorScale3D(FVector(1.f));
 }
 
 void AItem::ItemInterp(float DeltaTime)
@@ -199,9 +233,10 @@ void AItem::ItemInterp(float DeltaTime)
 		const float DeltaZ = ItemToCamera.Size();
 
 		const FVector CurrentLocation{ GetActorLocation() };
+
 		//FInterpTo(Current,Target,DeltaTime,InterpSpeed)
-		const float InterpXValue = FMath::FInterpTo(CurrentLocation.X, CameraInterpLocation.X, DeltaTime, 30.f);
-		const float InterpYValue = FMath::FInterpTo(CurrentLocation.Y, CameraInterpLocation.Y, DeltaTime, 30.f);
+		const float InterpXValue = FMath::FInterpTo(CurrentLocation.X, CameraInterpLocation.X, DeltaTime, 40.f);
+		const float InterpYValue = FMath::FInterpTo(CurrentLocation.Y, CameraInterpLocation.Y, DeltaTime, 40.f);
 
 		//Set X and Y of ItemLocation to Interped values
 		ItemLocation.X = InterpXValue;
@@ -210,6 +245,46 @@ void AItem::ItemInterp(float DeltaTime)
 		//Adding curve value to the Z component of the Initial Location (scaled by DeltaZ)
 		ItemLocation.Z += CurveValue * DeltaZ;
 		SetActorLocation(ItemLocation, true, nullptr, ETeleportType::TeleportPhysics);
+
+		//Camera rotation this framw
+		const FRotator CameraRotation{ Character->GetFollowCamera()-> GetComponentRotation() };
+
+		//Camera rotation plus initial Yaw Offset
+		FRotator ItemRotation{ 0.f, CameraRotation.Yaw + InterpInitialYawOffset, 0.f };
+
+		SetActorRotation(ItemRotation, ETeleportType::TeleportPhysics);
+
+		if (ItemScaleCurve)
+		{
+			const float ScaleCurveValue = ItemScaleCurve->GetFloatValue(ElapsedTime);
+			SetActorScale3D(FVector(ScaleCurveValue));
+		}
+		
+
+	}
+}
+
+void AItem::EnableCustomDepth()
+{
+	ItemMesh->SetRenderCustomDepth(true);
+}
+
+void AItem::DisableCustomDepth()
+{
+	ItemMesh->SetRenderCustomDepth(false);
+}
+
+void AItem::InitializeCustomDepth()
+{
+	DisableCustomDepth();
+}
+
+void AItem::OnConstruction(const FTransform& Transform)
+{
+	if (MaterialInstance)
+	{
+		DynamicMaterialInstance = UMaterialInstanceDynamic::Create(MaterialInstance, this);
+		ItemMesh->SetMaterial(MaterialIndex, DynamicMaterialInstance);
 	}
 }
 
@@ -241,5 +316,13 @@ void AItem::StartItemCurve(AVirusCharacter* Char)
 	SetItemState(EItemState::EIS_EquipInterping);
 
 	GetWorldTimerManager().SetTimer(ItemInterpTimer, this, &AItem::FinishInterping, ZCurveTime);
+
+	//Get Initial Yaw of the Camera
+	const double CameraRotationYaw{ Character->GetFollowCamera()->GetComponentRotation().Yaw };
+	//Get Initial Yaw of the Item
+	const double ItemRotationYaw{ GetActorRotation().Yaw };
+
+	//Initial Yaw Offset between Camera and Item
+	InterpInitialYawOffset = ItemRotationYaw - CameraRotationYaw;
 
 }
