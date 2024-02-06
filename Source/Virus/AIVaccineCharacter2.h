@@ -28,6 +28,8 @@ protected:
 	UFUNCTION()
 	void HideHealthBar();
 
+	class AHackingGaugeManager* GaugeManager;
+
 public:
 	/** Particles to spawn when hit by bullets */
 	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"))

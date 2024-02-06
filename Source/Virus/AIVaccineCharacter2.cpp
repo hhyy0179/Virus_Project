@@ -14,6 +14,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Particles/ParticleSystemComponent.h"
 #include "Sound/SoundCue.h"
+#include "HackingGaugeManager.h"
 
 // Sets default values
 AAIVaccineCharacter2::AAIVaccineCharacter2():
@@ -29,6 +30,10 @@ AAIVaccineCharacter2::AAIVaccineCharacter2():
 
 void AAIVaccineCharacter2::BeginPlay() {
 	Super::BeginPlay();
+
+	TArray<AActor*> FoundActors;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AHackingGaugeManager::StaticClass(), FoundActors);
+	GaugeManager = Cast<AHackingGaugeManager>(FoundActors[0]);
 
 	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
 	Health = MaxHealth;
@@ -91,6 +96,7 @@ void AAIVaccineCharacter2::HideHealthBar()
 
 void AAIVaccineCharacter2::Die()
 {
+	GaugeManager->ControlGauge(1);
 	HideHealthBar();
 	GetWorld()->DestroyActor(this);
 }
@@ -102,16 +108,16 @@ void AAIVaccineCharacter2::Tick(float DeltaTime)
 
 float AAIVaccineCharacter2::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
-	UE_LOG(LogTemp, Warning, TEXT("Current Health: %f"), Health);
+	UE_LOG(LogTemp, Warning, TEXT("Take Damage"));
 
 	ShowHealthBar();
 
-	if (Health - DamageAmount <= 0.f)
+	if (Health - DamageAmount == 0.f)
 	{
 		Die();
 		Health = 0.f;
 	}
-	else
+	else if (Health - DamageAmount > 0.f)
 	{
 		Health -= DamageAmount;
 	}

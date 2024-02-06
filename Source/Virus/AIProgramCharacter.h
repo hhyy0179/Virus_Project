@@ -33,6 +33,8 @@ protected:
 	UFUNCTION()
 	void HideHealthBar();
 
+	class AHackingGaugeManager* GaugeManager;
+
 public:
 	/** Particles to spawn when hit by bullets */
 	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"))
@@ -72,6 +74,8 @@ public:
 	float HealthBarDisplayTime;
 
 	void Die();
+
+	bool isDying = false;
 
 public:
 	// Called every frame

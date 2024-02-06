@@ -18,6 +18,7 @@
 #include "UObject/ConstructorHelpers.h"
 #include "AIAllyCharacter.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "HackingGaugeManager.h"
 
 AAIProgramCharacter::AAIProgramCharacter():
 	MaxHealth(100.f),
@@ -56,6 +57,11 @@ AAIProgramCharacter::AAIProgramCharacter():
 
 void AAIProgramCharacter::BeginPlay() {
 	Super::BeginPlay();
+
+
+	TArray<AActor*> FoundActors;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AHackingGaugeManager::StaticClass(), FoundActors);
+	GaugeManager = Cast<AHackingGaugeManager>(FoundActors[0]);
 
 	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
 	Health = MaxHealth;
@@ -126,18 +132,23 @@ void AAIProgramCharacter::ShowHealthBar_Implementation()
 void AAIProgramCharacter::Die()
 {
 	StopRoaming = true;
+	isDying = true;
 
 	GetCharacterMovement()->MaxWalkSpeed = 0.f;
 
 	GetMesh()->PlayAnimation(DieAnim, false);
+	
+	UE_LOG(LogTemp, Warning, TEXT("CloneActor"));
 
 	HideHealthBar();
 	GetWorldTimerManager().ClearTimer(Timer);
 	GetWorldTimerManager().SetTimer(Timer, this, &AAIProgramCharacter::CloneActor, DieAnimTime);
+
 }
 
 void AAIProgramCharacter::CloneActor()
 {
+
 	TSubclassOf<AAIAllyCharacter> NewActorClass = AAIAllyCharacter::StaticClass();
 	UObject* ClassPackage = ANY_PACKAGE;
 
@@ -200,12 +211,13 @@ float AAIProgramCharacter::TakeDamage(float DamageAmount, FDamageEvent const& Da
 	{
 		Die();
 		Health = 0.f;
+
 	}
 	else
 	{
 		Health -= DamageAmount;
 	}
-
+	
 	return DamageAmount;
 }
 
