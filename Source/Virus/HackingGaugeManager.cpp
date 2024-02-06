@@ -2,12 +2,24 @@
 
 
 #include "HackingGaugeManager.h"
+#include "Blueprint/UserWidget.h"
+#include "Misc/OutputDeviceNull.h"
+
+FOutputDeviceNull Ar;
 
 // Sets default values
 AHackingGaugeManager::AHackingGaugeManager()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+	static ConstructorHelpers::FClassFinder<UUserWidget> HackingGauageAsset(TEXT("/Game/_VirusGame/HUD/BP_HackingGauage2.BP_HackingGauage2_C"));
+
+	if (HackingGauageAsset.Succeeded()) {
+		HackingGauageClass = HackingGauageAsset.Class;
+	}
+	else {
+		UE_LOG(LogTemp, Warning, TEXT("there is no HackingGuageWidget"));
+	}
 
 }
 
@@ -15,19 +27,31 @@ AHackingGaugeManager::AHackingGaugeManager()
 void AHackingGaugeManager::BeginPlay()
 {
 	Super::BeginPlay();
-	
+	if (IsValid(HackingGauageClass))
+	{
+		HackingGauageWidget = Cast<UUserWidget>(CreateWidget(GetWorld(), HackingGauageClass));
+
+		if (IsValid(HackingGauageWidget))
+		{
+			// À§Á¬À» ºäÆ÷Æ®¿¡ ¶ç¿ì´Â ÇÔ¼ö
+			HackingGauageWidget->AddToViewport();
+
+		}
+	}
 }
 
 // Called every frame
 void AHackingGaugeManager::Tick(float DeltaTime)
 {
-	Super::Tick(DeltaTime);
-
+	Super::Tick(DeltaTime);	
 }
 
-void AHackingGaugeManager::ControlGauge(int Value)
+void AHackingGaugeManager::ControlGauge(float Value)
 {
 	Percent += Value;
-	UE_LOG(LogTemp, Warning, TEXT("The Guage = %d"), Percent);
+
+	const FString command = FString::Printf(TEXT("UpdatePercent %f"), Value);
+
+	HackingGauageWidget->CallFunctionByNameWithArguments(*command, Ar, NULL, true);
 }
 

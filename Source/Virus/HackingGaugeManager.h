@@ -22,9 +22,10 @@ protected:
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
-	void ControlGauge(int Value);
-
+	void ControlGauge(float Value);
+	TSubclassOf<UUserWidget> HackingGauageClass;
+	UUserWidget* HackingGauageWidget;
 public:
-	int Percent = 0; // 퍼센트를 정수 값으로 표시
+	float Percent = 0.0f; // 퍼센트를 정수 값으로 표시
 
 };

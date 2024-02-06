@@ -99,6 +99,7 @@ void AAIVaccineCharacter2::Die()
 	GaugeManager->ControlGauge(1);
 	HideHealthBar();
 	GetWorld()->DestroyActor(this);
+	GaugeManager->ControlGauge(0.01f);
 }
 
 void AAIVaccineCharacter2::Tick(float DeltaTime)

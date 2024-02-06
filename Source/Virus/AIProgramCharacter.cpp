@@ -88,8 +88,6 @@ UWidgetComponent* AAIProgramCharacter::GetWidgetComponentFromActor()
 {
 	if (this)
 	{
-		// ������ ��Ʈ ������Ʈ�� �����ɴϴ�.
-
 		if (RootComponent)
 		{
 			for (USceneComponent* ChildComponent : RootComponent->GetAttachChildren())
@@ -147,7 +145,8 @@ void AAIProgramCharacter::Die()
 	HideHealthBar();
 	GetWorldTimerManager().ClearTimer(Timer);
 	GetWorldTimerManager().SetTimer(Timer, this, &AAIProgramCharacter::CloneActor, DieAnimTime);
-
+	
+	GaugeManager->ControlGauge(0.01f);
 }
 
 void AAIProgramCharacter::CloneActor()
