@@ -29,6 +29,10 @@ public:
 	// Sets default values for this actor's properties
 	AItem();
 
+	// Called every frame
+	virtual void Tick(float DeltaTime) override;
+
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -48,10 +52,10 @@ protected:
 	/** Handles item interpolation when in the EquipInterping state */
 	void ItemInterp(float DeltaTime);
 
-public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
+	virtual void InitializeCustomDepth();
 
+	virtual void OnConstruction(const FTransform& Transform);	
+	
 private:
 
 	/** Skeletal Mesh for the item */
@@ -120,6 +124,38 @@ private:
 	float ItemInterpX;
 	float ItemInterpY;
 
+	/** Initial Yaw offset between the camera and the interping item */
+	double InterpInitialYawOffset;
+
+	/** Curve used to scale the item when interping */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Item Properties", meta = (AllowPrivateAccess = "true"))
+	UCurveFloat* ItemScaleCurve;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Item Properties", meta = (AllowPrivateAccess = "true"))
+	int32 MaterialIndex;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Item Properties", meta = (AllowPrivateAccess = "true"))
+	UMaterialInstanceDynamic* DynamicMaterialInstance;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Item Properties", meta = (AllowPrivateAccess = "true"))
+	UMaterialInstance* MaterialInstance;
+
+	/** Bakcground for this item in the inventory */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Inventory", meta = (AllowPrivateAccess = "true"))
+	UTexture2D* IconBackground;
+
+	/** Item for this item in the inventory */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Inventory", meta = (AllowPrivateAccess = "true"))
+	UTexture2D* IconItem;
+
+	/** Count for this item in the inventory */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Inventory", meta = (AllowPrivateAccess = "true"))
+	int32 ItemCount;
+
+	/** Slot in the inventory array */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Inventory", meta = (AllowPrivateAccess = "true"))
+	int32 SlotIndex;
+
 public: 
 	//Define Getter or Setter
 	FORCEINLINE UWidgetComponent* GetPickUpWidget() const { return PickUpWidget; }
@@ -131,7 +167,14 @@ public:
 	FORCEINLINE UNiagaraSystem* GetLaserFlash() const { return LaserFlash; }
 	FORCEINLINE UNiagaraSystem* GetImpactParticles() const { return ImpactParticles; }
 	FORCEINLINE UNiagaraSystem* GetBeamParticles() const { return BeamParticles; }
+	FORCEINLINE int32 GetItemCount() const { return ItemCount;  }
+	FORCEINLINE int32 GetSlotIndex() const { return SlotIndex; }
+	FORCEINLINE void SetSlotIndex(int32 Index) { SlotIndex = Index; }
 
 	/** Called from the AVirusCharacter class */
 	void StartItemCurve(AVirusCharacter* Char);
+
+	virtual void EnableCustomDepth();
+	virtual void DisableCustomDepth();
+
 };

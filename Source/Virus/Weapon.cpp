@@ -3,9 +3,10 @@
 
 #include "Weapon.h"
 
-AWeapon::AWeapon():
+AWeapon::AWeapon() :
 	ThrowWeaponTime(0.7f),
-	bFalling(false)
+	bFalling(false),
+	GageAmount(100.f)
 {
 	PrimaryActorTick.bCanEverTick = true;
 }
@@ -43,6 +44,18 @@ void AWeapon::ThrowWeapon()
 	//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Yellow, GetItemMesh()->GetName());
 	bFalling = true;
 	GetWorldTimerManager().SetTimer(ThrowWeaponTimer, this, &AWeapon::StopFalling, ThrowWeaponTime);
+}
+
+void AWeapon::DecrementGage()
+{
+	if (GageAmount - 1.f <= 0.f)
+	{
+		GageAmount = 0.f;
+	}
+	else
+	{
+		--GageAmount;
+	}
 }
 
 void AWeapon::StopFalling()
