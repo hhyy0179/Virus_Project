@@ -165,7 +165,6 @@ void AAIProgramCharacter::CloneActor()
 
 		GetWorld()->DestroyActor(this);
 
-		// ���ο� ���� ����
 		AAIAllyCharacter* NewActor = GetWorld()->SpawnActor<AAIAllyCharacter>(GeneratedBP->GeneratedClass, ActorTransform);
 	}
 	else

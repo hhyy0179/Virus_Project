@@ -4,6 +4,8 @@
 #include "HackingGaugeManager.h"
 #include "Blueprint/UserWidget.h"
 #include "Misc/OutputDeviceNull.h"
+#include "AIAllyCharacter.h"
+#include "Kismet/GameplayStatics.h"
 
 FOutputDeviceNull Ar;
 
@@ -44,6 +46,25 @@ void AHackingGaugeManager::BeginPlay()
 void AHackingGaugeManager::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);	
+
+	if (PreventPercent == Percent) {
+		Count++;
+		if (Count == MaxCount) {
+			Percent -= 0.01f;
+			ControlGauge(-0.01f);
+			TArray<AActor*> FoundActors;
+			UGameplayStatics::GetAllActorsOfClass(GetWorld(), AAIAllyCharacter::StaticClass(), FoundActors);
+			if (FoundActors.Num() > 0) {
+				AAIAllyCharacter* AIAlly = Cast<AAIAllyCharacter>(FoundActors[0]);
+				AIAlly->CloneActor();
+				Count = 0;
+			}
+		}
+	}
+	else {
+		PreventPercent = Percent;
+		Count = 0;
+	}
 }
 
 void AHackingGaugeManager::ControlGauge(float Value)
