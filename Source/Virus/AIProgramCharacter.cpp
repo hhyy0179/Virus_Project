@@ -82,7 +82,7 @@ UWidgetComponent* AAIProgramCharacter::GetWidgetComponentFromActor()
 {
 	if (this)
 	{
-		// ¾×ÅÍÀÇ ·çÆ® ÄÄÆ÷³ÍÆ®¸¦ °¡Á®¿É´Ï´Ù.
+		// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Æ® ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½É´Ï´ï¿½.
 
 		if (RootComponent)
 		{
@@ -151,7 +151,7 @@ void AAIProgramCharacter::CloneActor()
 
 		GetWorld()->DestroyActor(this);
 
-		// »õ·Î¿î ¾×ÅÍ »ý¼º
+		// ï¿½ï¿½ï¿½Î¿ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 		AAIAllyCharacter* NewActor = GetWorld()->SpawnActor<AAIAllyCharacter>(GeneratedBP->GeneratedClass, ActorTransform);
 	}
 	else
