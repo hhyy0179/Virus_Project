@@ -111,9 +111,9 @@ void AAIVaccineCharacter2::Die()
 		TSubclassOf<AAIAllyCharacter> NewActorClass = AAIAllyCharacter::StaticClass();
 		UObject* ClassPackage = ANY_PACKAGE;
 
-		UObject* SpawnActor = Cast<UObject>(StaticLoadObject(UObject::StaticClass(), NULL, TEXT("/Game/_VirusGame/AI/AIAllyCharacter/BP_AIAllyCharacter.BP_AIAllyCharacter")));
+		UObject* SpawnActor = Cast<UObject>(StaticLoadObject(UObject::StaticClass(), NULL, TEXT("/Script/Engine.Blueprint'/Game/_VirusGame/Items/Key/BP_Key.BP_Key'")));
 		UBlueprint* GeneratedBP = Cast<UBlueprint>(SpawnActor);
-		GetWorld()->SpawnActor<AAIAllyCharacter>(GeneratedBP->GeneratedClass, ActorTransform);
+		GetWorld()->SpawnActor<AActor>(GeneratedBP->GeneratedClass, ActorTransform);
 	}
 	else {
 		UE_LOG(LogTemp, Warning, TEXT("Fail RandomValue: %d"), RandomValue);
