@@ -257,8 +257,6 @@ void AVirusCharacter::Scan(const FInputActionValue& Value)
 
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 
-	if (EquippedWeapon == nullptr) return;
-
 	if (EquippedWeapon && WeaponHasGage())
 	{
 		if (Controller != nullptr && FireSound)
@@ -273,17 +271,10 @@ void AVirusCharacter::Scan(const FInputActionValue& Value)
 			}
 		}
 
-		if ((EquippedWeapon->GetGageAmount() > 0.f) && (EquippedWeapon->GetWeapongageStatus() != EWeapongageStatus::EWS_Reloading))
-		{
-			EquippedWeapon->SetWeapongageStatus(EWeapongageStatus::EWS_Normal);
-		}
-		
-		/* Legacy */
-		//const USkeletalMeshSocket* BarrelSocket = GetMesh()->GetSocketByName("BarrelSocket");
+		//Subtract 1 from the Weapon's Gage per 1 Frame
+		EquippedWeapon->DecrementGage();
 
-		/* New */
-		const USkeletalMeshSocket* BarrelSocket = EquippedWeapon->GetItemMesh()->GetSocketByName("BarrelSocket");
-
+		const USkeletalMeshSocket* BarrelSocket = GetMesh()->GetSocketByName("BarrelSocket");
 		if (BarrelSocket)
 		{
 			FTransform SocketTransform = BarrelSocket->GetSocketTransform(GetMesh());
@@ -427,15 +418,14 @@ void AVirusCharacter::Select(const FInputActionValue& Value)
 {
 	if (TraceHitItem)
 	{
+
 		TraceHitItem->StartItemCurve(this);
-		TraceHitItem = nullptr;
 	}
 	
 }
 
 void AVirusCharacter::StopSelect(const FInputActionValue& Value)
 {
-
 }
 
 void AVirusCharacter::Aiming(const FInputActionValue& Value)
@@ -521,11 +511,6 @@ void AVirusCharacter::TraceForItems()
 		if (ItemTraceResult.bBlockingHit)
 		{
 			TraceHitItem = Cast<AItem>(ItemTraceResult.GetActor());
-			if (TraceHitItem && TraceHitItem->GetItemState() == EItemState::EIS_EquipInterping)
-			{
-				TraceHitItem = nullptr;
-			}
-
 			if (TraceHitItem && TraceHitItem->GetPickUpWidget() && TraceHitItem->IsOverlappingActor(this))
 			{
 				//Show Item's PickupWidget
@@ -576,7 +561,6 @@ void AVirusCharacter::EquipWeapon(AWeapon* WeaponToEquip)
 
 		//Set CollisionBox to ignore all Collision Channels
 		WeaponToEquip->GetCollisionBox()->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
-		WeaponToEquip->GetItemMesh()->SetWorldScale3D(FVector(0.6f));
 
 		//Get the Hand Socket
 		const USkeletalMeshSocket* HandSocket = GetMesh()->GetSocketByName(FName("RightHandSocket"));
@@ -584,9 +568,8 @@ void AVirusCharacter::EquipWeapon(AWeapon* WeaponToEquip)
 		{
 			//Attach the Weapon the hand socket RightHandSocket
 			HandSocket->AttachActor(WeaponToEquip, GetMesh());
-			FVector WeaponScale = WeaponToEquip->GetActorScale();
-			UE_LOG(LogTemp, Warning, TEXT("Weapon Scale : %f %f %f"), WeaponScale.X, WeaponScale.Y, WeaponScale.Z);
 		}
+
 		if (EquippedWeapon == nullptr)
 		{
 			//-1 == no EquippedWeapon yet. No need to reverse the icon animation
@@ -598,7 +581,6 @@ void AVirusCharacter::EquipWeapon(AWeapon* WeaponToEquip)
 		}
 		EquippedWeapon = WeaponToEquip;
 		EquippedWeapon->SetItemState(EItemState::EIS_Equipped);
-
 	}
 }
 
@@ -675,25 +657,19 @@ FVector AVirusCharacter::GetCameraInterpLocation()
 
 void AVirusCharacter::GetPickUpItem(AItem* Item)
 {
-	auto GetItem = Cast<AItem>(Item);
 	auto Weapon = Cast<AWeapon>(Item);
-
 	if (Weapon)
-	{
-		SwapWeapon(Weapon);
-	}
-	else
 	{
 		if (Inventory.Num() < INVENTORY_CAPACITY)
 		{
-			GetItem->SetSlotIndex(Inventory.Num());
-			Inventory.Add(GetItem);
-			UE_LOG(LogTemp, Log, TEXT("Add Inventory"));
-			GetItem->SetItemState(EItemState::EIS_PickedUp);
+			Weapon->SetSlotIndex(Inventory.Num());
+			Inventory.Add(Weapon);
+			Weapon->SetItemState(EItemState::EIS_PickedUp);
 		}
 		else //Inventory is full swap with EquippedWeapon
 		{
-			//SwapWeapon(Weapon);
+			SwapWeapon(Weapon);
 		}
+		
 	}
 }

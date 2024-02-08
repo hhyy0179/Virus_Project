@@ -6,12 +6,9 @@
 AWeapon::AWeapon() :
 	ThrowWeaponTime(0.7f),
 	bFalling(false),
-	GageAmount(100.f),
-	GageDrainRate(10.f),
-	MaxGageAmount(100.f)
+	GageAmount(100.f)
 {
 	PrimaryActorTick.bCanEverTick = true;
-	GageAmount = MaxGageAmount;
 }
 
 void AWeapon::Tick(float DeltaTime)
@@ -24,15 +21,13 @@ void AWeapon::Tick(float DeltaTime)
 		const  FRotator MeshRotation{ 0.f, GetItemMesh()->GetComponentRotation().Yaw, 0.f };
 		GetItemMesh()->SetWorldRotation(MeshRotation, false, nullptr, ETeleportType::TeleportPhysics);
 	}
-
-	SetWeapongageProperties(GageStatus, DeltaTime);
 }
 
 void AWeapon::ThrowWeapon()
 {
 	FRotator MeshRotation{ 0.f, GetItemMesh()->GetComponentRotation().Yaw, 0.f };
 	GetItemMesh()->SetWorldRotation(MeshRotation, false, nullptr, ETeleportType::TeleportPhysics);
-	GetItemMesh()->SetWorldScale3D(FVector(0.6f));
+
 	const FVector MeshForward{ GetItemMesh()->GetForwardVector() };
 	const FVector MeshRight{ GetItemMesh()->GetRightVector() };
 
@@ -51,49 +46,20 @@ void AWeapon::ThrowWeapon()
 	GetWorldTimerManager().SetTimer(ThrowWeaponTimer, this, &AWeapon::StopFalling, ThrowWeaponTime);
 }
 
+void AWeapon::DecrementGage()
+{
+	if (GageAmount - 1.f <= 0.f)
+	{
+		GageAmount = 0.f;
+	}
+	else
+	{
+		--GageAmount;
+	}
+}
 
 void AWeapon::StopFalling()
 {
 	bFalling = false;
 	SetItemState(EItemState::EIS_Pickup);
-}
-
-void AWeapon::SetWeapongageProperties(EWeapongageStatus State, float DeltaTime)
-{
-	float DeltaGage = GageDrainRate * DeltaTime;
-
-	switch (State)
-	{
-	case EWeapongageStatus::EWS_Normal:
-
-		if (Character->GetScanning())
-		{
-			GageAmount -= DeltaGage;
-
-			if (GageAmount <= 0.f)
-			{
-				SetWeapongageStatus(EWeapongageStatus::EWS_Empty);
-			}
-
-		}
-		break;
-
-	case EWeapongageStatus::EWS_Empty:
-		GageAmount = 0.f;
-		SetWeapongageStatus(EWeapongageStatus::EWS_Reloading);
-		break;
-
-	case EWeapongageStatus::EWS_Reloading:
-
-		if (GageAmount <= MaxGageAmount)
-		{
-			GageAmount += DeltaGage * 5;
-		}
-		else 
-		{
-			GageAmount = MaxGageAmount;
-			SetWeapongageStatus(EWeapongageStatus::EWS_Normal);
-		}
-		break;
-	}
 }
