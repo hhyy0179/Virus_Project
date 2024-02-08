@@ -133,6 +133,9 @@ class AVirusCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Stats", meta = (AllowPrivateAccess = "true"))
 	bool bisDoubleJump;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Stats", meta = (AllowPrivateAccess = "true"))
+	bool bisScanning;
+
 	/** Determines the spread of the crosshairs */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Crosshairs, meta = (AllowPrivateAccess = "true"))
 	float CrosshairSpreadMultiplier;
@@ -278,6 +281,8 @@ public:
 	FORCEINLINE bool GetAiming() const { return bAiming; }
 
 	FORCEINLINE bool GetDoubleJump() const { return bisDoubleJump; }
+
+	FORCEINLINE bool GetScanning() const { return bisScanning; }
 
 	UFUNCTION(BlueprintCallable)
 	float GetCrosshairSpreadMultiplier() const;
