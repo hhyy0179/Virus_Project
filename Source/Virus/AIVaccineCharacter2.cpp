@@ -15,6 +15,8 @@
 #include "Particles/ParticleSystemComponent.h"
 #include "Sound/SoundCue.h"
 #include "HackingGaugeManager.h"
+#include "Engine/World.h"
+#include "AIAllyCharacter.h"
 
 // Sets default values
 AAIVaccineCharacter2::AAIVaccineCharacter2():
@@ -96,10 +98,26 @@ void AAIVaccineCharacter2::HideHealthBar()
 
 void AAIVaccineCharacter2::Die()
 {
-	GaugeManager->ControlGauge(1);
+	GaugeManager->ControlGauge(0.01f);
 	HideHealthBar();
 	GetWorld()->DestroyActor(this);
 	GaugeManager->ControlGauge(0.01f);
+	FTransform ActorTransform = this->GetActorTransform();
+	this->SetActorLocation(FVector(0.f, 0.f, 0.f));
+	
+	int RandomValue = FMath::RandRange(1, 10);
+	if (RandomValue < 8) {
+		// Spawn Actor
+		TSubclassOf<AAIAllyCharacter> NewActorClass = AAIAllyCharacter::StaticClass();
+		UObject* ClassPackage = ANY_PACKAGE;
+
+		UObject* SpawnActor = Cast<UObject>(StaticLoadObject(UObject::StaticClass(), NULL, TEXT("/Game/_VirusGame/AI/AIAllyCharacter/BP_AIAllyCharacter.BP_AIAllyCharacter")));
+		UBlueprint* GeneratedBP = Cast<UBlueprint>(SpawnActor);
+		GetWorld()->SpawnActor<AAIAllyCharacter>(GeneratedBP->GeneratedClass, ActorTransform);
+	}
+	else {
+		UE_LOG(LogTemp, Warning, TEXT("Fail RandomValue: %d"), RandomValue);
+	}
 }
 
 void AAIVaccineCharacter2::Tick(float DeltaTime)
