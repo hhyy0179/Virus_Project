@@ -9,18 +9,6 @@
 /**
  * 
  */
-
-UENUM(BlueprintType)
-enum class EWeapongageStatus : uint8
-{
-	EWS_Normal UMETA(DisplayName = "Normal"),
-	EWS_Empty UMETA(DisplayName = "Empty"),
-	EWS_Reloading UMETA(DisplayName = "Reloading"),
-
-	EWS_MAX UMETA(DisplayName = "DefaultMax")
-};
-
-
 UCLASS()
 class VIRUS_API AWeapon : public AItem
 {
@@ -31,37 +19,23 @@ public:
 
 	virtual void Tick(float DeltaTime) override;
 protected:
-
 	void StopFalling();
-
-	void SetWeapongageProperties(EWeapongageStatus State, float DeltaTime);
 private:
 	FTimerHandle ThrowWeaponTimer;
 	float ThrowWeaponTime;
 	bool bFalling;
 
-
 	/** Gage Amount for this Weapon */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Weapon Properties", meta = (AllowPrivateAccess ="true"))
 	float GageAmount;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Properties", meta = (AllowPrivateAccess = "true"))
-	float GageDrainRate;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Properties", meta = (AllowPrivateAccess = "true"))
-	float MaxGageAmount;
 
 public:
 
 	/** Adds the impulse to the Weapon */
 	void ThrowWeapon();
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Enums")
-	EWeapongageStatus GageStatus;
 	
 	FORCEINLINE float GetGageAmount() const { return GageAmount; }
-	FORCEINLINE float GetGagePercent() const { return GageAmount / MaxGageAmount; }
-	FORCEINLINE EWeapongageStatus GetWeapongageStatus() const { return GageStatus; }
-	FORCEINLINE void SetWeapongageStatus(EWeapongageStatus Status) { GageStatus = Status; }
 
+	/** Called from Character class when firing weapon */
+	void DecrementGage();
 };
