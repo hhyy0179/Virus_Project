@@ -259,6 +259,10 @@ void AVirusCharacter::AttackWeapon(float DeltaTime)
 {
 	if (!bisScanning) return;
 	if (EquippedWeapon == nullptr) return;
+	if (CheckReloading())
+	{
+		PlayReloadMontatge();
+	}
 
 	if (WeaponHasGage() && (!CheckReloading()))
 	{
@@ -587,16 +591,14 @@ void AVirusCharacter::EquipWeapon(AWeapon* WeaponToEquip)
 
 		//Set CollisionBox to ignore all Collision Channels
 		WeaponToEquip->GetCollisionBox()->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
-		WeaponToEquip->GetItemMesh()->SetWorldScale3D(FVector(0.6f));
 
 		//Get the Hand Socket
 		const USkeletalMeshSocket* HandSocket = GetMesh()->GetSocketByName(FName("RightHandSocket"));
+		FVector WeaponScale;
 		if (HandSocket)
 		{
 			//Attach the Weapon the hand socket RightHandSocket
 			HandSocket->AttachActor(WeaponToEquip, GetMesh());
-			FVector WeaponScale = WeaponToEquip->GetActorScale();
-			UE_LOG(LogTemp, Warning, TEXT("Weapon Scale : %f %f %f"), WeaponScale.X, WeaponScale.Y, WeaponScale.Z);
 		}
 		if (EquippedWeapon == nullptr)
 		{
@@ -609,7 +611,6 @@ void AVirusCharacter::EquipWeapon(AWeapon* WeaponToEquip)
 		}
 		EquippedWeapon = WeaponToEquip;
 		EquippedWeapon->SetItemState(EItemState::EIS_Equipped);
-
 	}
 }
 
@@ -678,7 +679,11 @@ void AVirusCharacter::Tick(float DeltaTime)
 
 	if (GEngine && EquippedWeapon)
 	{
-		FString Message = FString::Printf(TEXT("GagePercent: %f"), EquippedWeapon->GetGageAmount());
+		FVector WeaponScale = EquippedWeapon->GetActorRelativeScale3D();
+		//UE_LOG(LogTemp, Warning, TEXT("Equipped Weapon Scale : %f %f %f"), WeaponScale.X, WeaponScale.Y, WeaponScale.Z);
+		//이유를 모르겠다...ㅜㅜㅜ ㅜㅠ
+		EquippedWeapon->SetActorRelativeScale3D(FVector(1.0f));
+		FString Message = FString::Printf(TEXT("Equipped Weapon Scale : %f %f %f"), WeaponScale.X, WeaponScale.Y, WeaponScale.Z);
 		GEngine->AddOnScreenDebugMessage(1, 0.f, FColor::White, Message);
 	}
 }

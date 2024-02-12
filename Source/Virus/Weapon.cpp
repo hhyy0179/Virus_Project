@@ -38,7 +38,7 @@ void AWeapon::ThrowWeapon()
 {
 	FRotator MeshRotation{ 0.f, GetItemMesh()->GetComponentRotation().Yaw, 0.f };
 	GetItemMesh()->SetWorldRotation(MeshRotation, false, nullptr, ETeleportType::TeleportPhysics);
-	GetItemMesh()->SetWorldScale3D(FVector(0.6f));
+	SetActorScale3D(FVector(1.0f));
 	const FVector MeshForward{ GetItemMesh()->GetForwardVector() };
 	const FVector MeshRight{ GetItemMesh()->GetRightVector() };
 
