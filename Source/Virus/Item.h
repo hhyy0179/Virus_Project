@@ -55,7 +55,11 @@ protected:
 	virtual void InitializeCustomDepth();
 
 	virtual void OnConstruction(const FTransform& Transform);	
-	
+
+	/** Pointer to the Character */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Item Properties")
+	class AVirusCharacter* Character;
+
 private:
 
 	/** Skeletal Mesh for the item */
@@ -103,10 +107,6 @@ private:
 	/** Target interp location in front of the camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Item Properties", meta = (AllowPrivateAccess = "true"))
 	FVector CameraTargetLocation;
-
-	/** Pointer to the Character */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Item Properties", meta = (AllowPrivateAccess = "true"))
-	class AVirusCharacter* Character;
 
 	/** true when interping */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Item Properties", meta = (AllowPrivateAccess = "true"))

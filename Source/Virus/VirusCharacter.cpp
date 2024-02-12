@@ -51,7 +51,8 @@ AVirusCharacter::AVirusCharacter() :
 	//Camerainterp location variables
 	CameraInterpDistance(150.f),
 	CameraInterpElevation(45.f),
-	bShouldPlayPickupSound(true)
+	bShouldPlayPickupSound(true),
+	bisScanning(false)
 {
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
@@ -120,6 +121,8 @@ void AVirusCharacter::BeginPlay()
 		}
 	}
 
+	AnimInstance = GetMesh()->GetAnimInstance();
+
 	VirusPlayerController = Cast<AVirusPlayerController>(GetController());
 	CurrentHP = MaxHP;
 
@@ -130,8 +133,8 @@ void AVirusCharacter::BeginPlay()
 	}
 
 	//Spawn the default weapon and attach it to the mesh
-	EquipWeapon(SpawnDefaultWeapon());
-	EquippedWeapon->DisableCustomDepth();
+	//EquipWeapon(SpawnDefaultWeapon());
+	//EquippedWeapon->DisableCustomDepth();
 }
 
 float AVirusCharacter::GetHP()
@@ -158,8 +161,8 @@ void AVirusCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInp
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AVirusCharacter::Look);
 
 		//Scanning
-		EnhancedInputComponent->BindAction(ScanAction, ETriggerEvent::Triggered, this, &AVirusCharacter::Scan);
-		//EnhancedInputComponent->BindAction(ScanAction, ETriggerEvent::Completed, this, &AVirusCharacter::StopScan);
+		EnhancedInputComponent->BindAction(ScanAction, ETriggerEvent::Started, this, &AVirusCharacter::Scan);
+		EnhancedInputComponent->BindAction(ScanAction, ETriggerEvent::Completed, this, &AVirusCharacter::StopScan);
 
 		//Heal
 		//EnhancedInputComponent->BindAction(HealAction, ETriggerEvent::Started, this, &AVirusCharacter::Heal);
@@ -172,6 +175,8 @@ void AVirusCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInp
 		EnhancedInputComponent->BindAction(SelectAction, ETriggerEvent::Started, this, &AVirusCharacter::Select);
 		EnhancedInputComponent->BindAction(SelectAction, ETriggerEvent::Completed, this, &AVirusCharacter::StopSelect);
 
+		//Reloading
+		EnhancedInputComponent->BindAction(ReloadAction, ETriggerEvent::Started, this, &AVirusCharacter::Reload);
 	}
 
 }
@@ -232,7 +237,6 @@ void AVirusCharacter::DoubleJump(const FInputActionValue& Value)
 
 	if (CanJump() && bisDoubleJump)
 	{
-		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 		if (AnimInstance && DoubleJumpMontage)
 		{
 			FRotator CharacterRotation = GetActorRotation(); 
@@ -251,14 +255,12 @@ void AVirusCharacter::DoubleJump(const FInputActionValue& Value)
 }
 
 
-void AVirusCharacter::Scan(const FInputActionValue& Value)
+void AVirusCharacter::AttackWeapon(float DeltaTime)
 {
-
-	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-
+	if (!bisScanning) return;
 	if (EquippedWeapon == nullptr) return;
 
-	if (EquippedWeapon && WeaponHasGage())
+	if (WeaponHasGage() && (!CheckReloading()))
 	{
 		if (Controller != nullptr && FireSound)
 		{
@@ -271,12 +273,8 @@ void AVirusCharacter::Scan(const FInputActionValue& Value)
 				AnimInstance->Montage_JumpToSection(FName("Attack"));
 			}
 		}
+		EquippedWeapon->SetWeapongageStatus(EWeapongageStatus::EWS_Normal);
 
-		if ((EquippedWeapon->GetGageAmount() > 0.f) && (EquippedWeapon->GetWeapongageStatus() != EWeapongageStatus::EWS_Reloading))
-		{
-			EquippedWeapon->SetWeapongageStatus(EWeapongageStatus::EWS_Normal);
-		}
-		
 		/* Legacy */
 		//const USkeletalMeshSocket* BarrelSocket = GetMesh()->GetSocketByName("BarrelSocket");
 
@@ -291,7 +289,6 @@ void AVirusCharacter::Scan(const FInputActionValue& Value)
 			{
 				UNiagaraComponent* FlashInstance = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), LaserFlash, SocketTransform.GetLocation());
 				FlashInstance->Activate();
-
 			}
 
 			FHitResult BeamHitResult;
@@ -353,6 +350,23 @@ void AVirusCharacter::Scan(const FInputActionValue& Value)
 			}
 
 		}
+	}
+}
+
+void AVirusCharacter::Scan(const FInputActionValue& Value)
+{
+	if (EquippedWeapon)
+	{
+		bisScanning = true;
+	}
+	
+}
+
+void AVirusCharacter::StopScan(const FInputActionValue& Value)
+{
+	if (EquippedWeapon)
+	{
+		bisScanning = false;
 	}
 }
 
@@ -431,6 +445,18 @@ void AVirusCharacter::Aiming(const FInputActionValue& Value)
 void AVirusCharacter::StopAiming(const FInputActionValue& Value)
 {
 	bAiming = false;
+}
+
+void AVirusCharacter::Reload(const FInputActionValue& Value)
+{
+	bReloading = true;
+
+	if (!CheckReloading())
+	{
+		EquippedWeapon->SetWeapongageStatus(EWeapongageStatus::EWS_Reloading);
+		PlayReloadMontatge();
+	}
+
 }
 
 void AVirusCharacter::CameraInterpZoom(float DeltaTime)
@@ -614,6 +640,28 @@ bool AVirusCharacter::WeaponHasGage()
 	return EquippedWeapon->GetGageAmount() > 0.f;
 }
 
+bool AVirusCharacter::CheckReloading()
+{
+	if (EquippedWeapon == nullptr) return false;
+
+	return EquippedWeapon->GetWeapongageStatus() == EWeapongageStatus::EWS_Reloading;
+
+}
+
+void AVirusCharacter::PlayReloadMontatge()
+{
+	if (AnimInstance && ScaningMontage)
+	{
+		AnimInstance->Montage_Play(ScaningMontage);
+		AnimInstance->Montage_JumpToSection("Reload");
+	}
+}
+
+void AVirusCharacter::OnReloadMontageEnded()
+{
+	bReloading = false;
+}
+
 void AVirusCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
@@ -625,12 +673,18 @@ void AVirusCharacter::Tick(float DeltaTime)
 
 	//Check OverlappedItemCount, then trace for items
 	TraceForItems();
-	
+
+	AttackWeapon(DeltaTime);
+
+	if (GEngine && EquippedWeapon)
+	{
+		FString Message = FString::Printf(TEXT("GagePercent: %f"), EquippedWeapon->GetGageAmount());
+		GEngine->AddOnScreenDebugMessage(1, 0.f, FColor::White, Message);
+	}
 }
 
 float AVirusCharacter::GetCrosshairSpreadMultiplier() const
 {
-
 	return CrosshairSpreadMultiplier;
 }
 

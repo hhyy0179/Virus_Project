@@ -2,13 +2,15 @@
 
 
 #include "Weapon.h"
+#include "VirusCharacter.h"
 
 AWeapon::AWeapon() :
 	ThrowWeaponTime(0.7f),
 	bFalling(false),
-	GageAmount(100.f),
-	GageDrainRate(10.f),
-	MaxGageAmount(100.f)
+	GageAmount(1.0f),
+	GageDrainRate(0.1f),
+	MaxGageAmount(1.0f),
+	GageStatus(EWeapongageStatus::EWS_Normal)
 {
 	PrimaryActorTick.bCanEverTick = true;
 	GageAmount = MaxGageAmount;
@@ -25,7 +27,11 @@ void AWeapon::Tick(float DeltaTime)
 		GetItemMesh()->SetWorldRotation(MeshRotation, false, nullptr, ETeleportType::TeleportPhysics);
 	}
 
-	SetWeapongageProperties(GageStatus, DeltaTime);
+	if (Character)
+	{
+		SetWeapongageProperties(GageStatus, DeltaTime);
+	}
+	
 }
 
 void AWeapon::ThrowWeapon()
@@ -52,6 +58,14 @@ void AWeapon::ThrowWeapon()
 }
 
 
+void AWeapon::BeginPlay()
+{
+	Super::BeginPlay();
+
+	GageAmount = MaxGageAmount;
+	GageStatus = EWeapongageStatus::EWS_Normal;
+}
+
 void AWeapon::StopFalling()
 {
 	bFalling = false;
@@ -68,13 +82,12 @@ void AWeapon::SetWeapongageProperties(EWeapongageStatus State, float DeltaTime)
 
 		if (Character->GetScanning())
 		{
-			GageAmount -= DeltaGage;
+			GageAmount -= DeltaGage * 2;
 
 			if (GageAmount <= 0.f)
 			{
 				SetWeapongageStatus(EWeapongageStatus::EWS_Empty);
 			}
-
 		}
 		break;
 

@@ -61,9 +61,8 @@ class AVirusCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* SelectAction;
 
-	/** Montage for double jump */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	class UAnimMontage* DoubleJumpMontage;
+	class UInputAction* ReloadAction;
 
 	/** Scan Shot Sound cue*/
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input, meta = (AllowPrivateAccess = "true"))
@@ -101,14 +100,20 @@ class AVirusCharacter : public ACharacter
 	//UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
 	float ZoomInterpSpeed;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Animation, meta = (AllowPrivateAccess = "true"))
+	class UAnimInstance* AnimInstance;
+
+	/** Montage for double jump */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Skill, meta = (AllowPrivateAccess = "true"))
+	class UAnimMontage* DoubleJumpMontage;
+
 	/** Flash spawned at BarrelSocket */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Healing, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Skill, meta = (AllowPrivateAccess = "true"))
 	class UParticleSystem* HealingVFX;
 
-	/** Montage for attack using the weapon */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Healing, meta = (AllowPrivateAccess = "true"))
-	class UAnimMontage* HealingMontage;
-
+	/** Montage for healing action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Skill, meta = (AllowPrivateAccess = "true"))
+	UAnimMontage* HealingMontage;
 
 	/** MinimapArm positioning the camera upon the character */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Minimap, meta = (AllowPrivateAccess = "true"))
@@ -198,6 +203,8 @@ class AVirusCharacter : public ACharacter
 	UPROPERTY(BlueprintAssignable, Category = Delegates, meta = (AllowPrivateAccess = "true"))
 	FEquipItemDelegate EquipItemDelegate;
 
+	bool bReloading;
+
 protected:
 
 	/** Called for movement input */
@@ -211,6 +218,7 @@ protected:
 
 	/** Called for Shooting input */
 	void Scan(const FInputActionValue& Value);
+	void StopScan(const FInputActionValue& Value);
 
 	/** Called for Healing input */
 	void Heal(const FInputActionValue& Value);
@@ -222,7 +230,11 @@ protected:
 	void Aiming(const FInputActionValue& Value);
 	void StopAiming(const FInputActionValue& Value);
 
+	void Reload(const FInputActionValue& Value);
+
 	bool GetBeamEndLocation(const FVector& MuzzleSocketLocation, FHitResult& OutHitResult);
+
+	void AttackWeapon(float DeltaTime);
 
 	void CameraInterpZoom(float DeltaTime);
 
@@ -248,6 +260,12 @@ protected:
 
 	/**Check to make sure our weapon has gage  */
 	bool WeaponHasGage();
+
+	bool CheckReloading();
+
+	void PlayReloadMontatge();
+
+	void OnReloadMontageEnded();
 
 public:
 	AVirusCharacter();

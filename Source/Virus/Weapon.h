@@ -31,6 +31,8 @@ public:
 
 	virtual void Tick(float DeltaTime) override;
 protected:
+	// Called when the game starts or when spawned
+	virtual void BeginPlay() override;
 
 	void StopFalling();
 
@@ -39,7 +41,6 @@ private:
 	FTimerHandle ThrowWeaponTimer;
 	float ThrowWeaponTime;
 	bool bFalling;
-
 
 	/** Gage Amount for this Weapon */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Weapon Properties", meta = (AllowPrivateAccess ="true"))
@@ -51,6 +52,7 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Properties", meta = (AllowPrivateAccess = "true"))
 	float MaxGageAmount;
 
+
 public:
 
 	/** Adds the impulse to the Weapon */
@@ -60,7 +62,6 @@ public:
 	EWeapongageStatus GageStatus;
 	
 	FORCEINLINE float GetGageAmount() const { return GageAmount; }
-	FORCEINLINE float GetGagePercent() const { return GageAmount / MaxGageAmount; }
 	FORCEINLINE EWeapongageStatus GetWeapongageStatus() const { return GageStatus; }
 	FORCEINLINE void SetWeapongageStatus(EWeapongageStatus Status) { GageStatus = Status; }
 
