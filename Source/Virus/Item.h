@@ -55,7 +55,11 @@ protected:
 	virtual void InitializeCustomDepth();
 
 	virtual void OnConstruction(const FTransform& Transform);	
-	
+
+	/** Pointer to the Character */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Item Properties")
+	class AVirusCharacter* Character;
+
 private:
 
 	/** Skeletal Mesh for the item */

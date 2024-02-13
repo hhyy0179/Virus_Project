@@ -25,7 +25,6 @@
 #include "Components/SphereComponent.h"
 #include "Item.h"
 #include "Weapon.h"
-#include "AIVaccineCharacter2.h"
 
 //////////////////////////////////////////////////////////////////////////
 // AVirusCharacter
@@ -52,7 +51,8 @@ AVirusCharacter::AVirusCharacter() :
 	//Camerainterp location variables
 	CameraInterpDistance(150.f),
 	CameraInterpElevation(45.f),
-	bShouldPlayPickupSound(true)
+	bShouldPlayPickupSound(true),
+	bisScanning(false)
 {
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
@@ -121,6 +121,8 @@ void AVirusCharacter::BeginPlay()
 		}
 	}
 
+	AnimInstance = GetMesh()->GetAnimInstance();
+
 	VirusPlayerController = Cast<AVirusPlayerController>(GetController());
 	CurrentHP = MaxHP;
 
@@ -131,8 +133,8 @@ void AVirusCharacter::BeginPlay()
 	}
 
 	//Spawn the default weapon and attach it to the mesh
-	EquipWeapon(SpawnDefaultWeapon());
-	EquippedWeapon->DisableCustomDepth();
+	//EquipWeapon(SpawnDefaultWeapon());
+	//EquippedWeapon->DisableCustomDepth();
 }
 
 float AVirusCharacter::GetHP()
@@ -159,8 +161,8 @@ void AVirusCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInp
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AVirusCharacter::Look);
 
 		//Scanning
-		EnhancedInputComponent->BindAction(ScanAction, ETriggerEvent::Triggered, this, &AVirusCharacter::Scan);
-		//EnhancedInputComponent->BindAction(ScanAction, ETriggerEvent::Completed, this, &AVirusCharacter::StopScan);
+		EnhancedInputComponent->BindAction(ScanAction, ETriggerEvent::Started, this, &AVirusCharacter::Scan);
+		EnhancedInputComponent->BindAction(ScanAction, ETriggerEvent::Completed, this, &AVirusCharacter::StopScan);
 
 		//Heal
 		//EnhancedInputComponent->BindAction(HealAction, ETriggerEvent::Started, this, &AVirusCharacter::Heal);
@@ -173,6 +175,8 @@ void AVirusCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInp
 		EnhancedInputComponent->BindAction(SelectAction, ETriggerEvent::Started, this, &AVirusCharacter::Select);
 		EnhancedInputComponent->BindAction(SelectAction, ETriggerEvent::Completed, this, &AVirusCharacter::StopSelect);
 
+		//Reloading
+		EnhancedInputComponent->BindAction(ReloadAction, ETriggerEvent::Started, this, &AVirusCharacter::Reload);
 	}
 
 }
@@ -233,7 +237,6 @@ void AVirusCharacter::DoubleJump(const FInputActionValue& Value)
 
 	if (CanJump() && bisDoubleJump)
 	{
-		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 		if (AnimInstance && DoubleJumpMontage)
 		{
 			FRotator CharacterRotation = GetActorRotation(); 
@@ -252,12 +255,16 @@ void AVirusCharacter::DoubleJump(const FInputActionValue& Value)
 }
 
 
-void AVirusCharacter::Scan(const FInputActionValue& Value)
+void AVirusCharacter::AttackWeapon(float DeltaTime)
 {
+	if (!bisScanning) return;
+	if (EquippedWeapon == nullptr) return;
+	if (CheckReloading())
+	{
+		PlayReloadMontatge();
+	}
 
-	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-
-	if (EquippedWeapon && WeaponHasGage())
+	if (WeaponHasGage() && (!CheckReloading()))
 	{
 		if (Controller != nullptr && FireSound)
 		{
@@ -270,11 +277,14 @@ void AVirusCharacter::Scan(const FInputActionValue& Value)
 				AnimInstance->Montage_JumpToSection(FName("Attack"));
 			}
 		}
+		EquippedWeapon->SetWeapongageStatus(EWeapongageStatus::EWS_Normal);
 
-		//Subtract 1 from the Weapon's Gage per 1 Frame
-		EquippedWeapon->DecrementGage();
+		/* Legacy */
+		//const USkeletalMeshSocket* BarrelSocket = GetMesh()->GetSocketByName("BarrelSocket");
 
-		const USkeletalMeshSocket* BarrelSocket = GetMesh()->GetSocketByName("BarrelSocket");
+		/* New */
+		const USkeletalMeshSocket* BarrelSocket = EquippedWeapon->GetItemMesh()->GetSocketByName("BarrelSocket");
+
 		if (BarrelSocket)
 		{
 			FTransform SocketTransform = BarrelSocket->GetSocketTransform(GetMesh());
@@ -283,7 +293,6 @@ void AVirusCharacter::Scan(const FInputActionValue& Value)
 			{
 				UNiagaraComponent* FlashInstance = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), LaserFlash, SocketTransform.GetLocation());
 				FlashInstance->Activate();
-
 			}
 
 			FHitResult BeamHitResult;
@@ -305,39 +314,25 @@ void AVirusCharacter::Scan(const FInputActionValue& Value)
 						//Head Shot
 						if (BeamHitResult.BoneName.ToString() == HitProgram->GetHeadBone())
 						{
-							if (HitProgram->Health > 0.f)
-							{
-								UGameplayStatics::ApplyDamage(BeamHitResult.GetActor(), HeadShotDamage, GetController(), this, UDamageType::StaticClass());
-							}
+							UGameplayStatics::ApplyDamage(BeamHitResult.GetActor(), 50.f, GetController(), this, UDamageType::StaticClass());
 						}
 						//Body Shot
 						else
 						{
-							if (HitProgram->Health > 0.f)
-							{
-								UGameplayStatics::ApplyDamage(BeamHitResult.GetActor(), BodyShotDamage, GetController(), this, UDamageType::StaticClass());
-							}
+							UGameplayStatics::ApplyDamage(BeamHitResult.GetActor(), 20.f, GetController(), this, UDamageType::StaticClass());
 						}
 
 						UE_LOG(LogTemp, Warning, TEXT("Hit Component: %s"), *BeamHitResult.BoneName.ToString());
 					}
 					else
 					{
-						AAIVaccineCharacter2* HitVaccine = Cast<AAIVaccineCharacter2>(BeamHitResult.GetActor());
-						if (HitVaccine)
+						ImpactParticles = EquippedWeapon->GetImpactParticles();
+						//Spawn default particles
+						if (ImpactParticles)
 						{
-							UGameplayStatics::ApplyDamage(BeamHitResult.GetActor(), BodyShotDamage, GetController(), this, UDamageType::StaticClass());
-						}
-						else
-						{
-							ImpactParticles = EquippedWeapon->GetImpactParticles();
-							//Spawn default particles
-							if (ImpactParticles)
-							{
-								UNiagaraComponent* EndHitInstance = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), ImpactParticles, BeamHitResult.Location);
-								EndHitInstance->Activate();
+							UNiagaraComponent* EndHitInstance = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), ImpactParticles, BeamHitResult.Location);
+							EndHitInstance->Activate();
 
-							}
 						}
 					}
 				}
@@ -359,6 +354,23 @@ void AVirusCharacter::Scan(const FInputActionValue& Value)
 			}
 
 		}
+	}
+}
+
+void AVirusCharacter::Scan(const FInputActionValue& Value)
+{
+	if (EquippedWeapon)
+	{
+		bisScanning = true;
+	}
+	
+}
+
+void AVirusCharacter::StopScan(const FInputActionValue& Value)
+{
+	if (EquippedWeapon)
+	{
+		bisScanning = false;
 	}
 }
 
@@ -418,14 +430,15 @@ void AVirusCharacter::Select(const FInputActionValue& Value)
 {
 	if (TraceHitItem)
 	{
-
 		TraceHitItem->StartItemCurve(this);
+		TraceHitItem = nullptr;
 	}
 	
 }
 
 void AVirusCharacter::StopSelect(const FInputActionValue& Value)
 {
+
 }
 
 void AVirusCharacter::Aiming(const FInputActionValue& Value)
@@ -436,6 +449,18 @@ void AVirusCharacter::Aiming(const FInputActionValue& Value)
 void AVirusCharacter::StopAiming(const FInputActionValue& Value)
 {
 	bAiming = false;
+}
+
+void AVirusCharacter::Reload(const FInputActionValue& Value)
+{
+	bReloading = true;
+
+	if (!CheckReloading())
+	{
+		EquippedWeapon->SetWeapongageStatus(EWeapongageStatus::EWS_Reloading);
+		PlayReloadMontatge();
+	}
+
 }
 
 void AVirusCharacter::CameraInterpZoom(float DeltaTime)
@@ -511,6 +536,11 @@ void AVirusCharacter::TraceForItems()
 		if (ItemTraceResult.bBlockingHit)
 		{
 			TraceHitItem = Cast<AItem>(ItemTraceResult.GetActor());
+			if (TraceHitItem && TraceHitItem->GetItemState() == EItemState::EIS_EquipInterping)
+			{
+				TraceHitItem = nullptr;
+			}
+
 			if (TraceHitItem && TraceHitItem->GetPickUpWidget() && TraceHitItem->IsOverlappingActor(this))
 			{
 				//Show Item's PickupWidget
@@ -564,12 +594,12 @@ void AVirusCharacter::EquipWeapon(AWeapon* WeaponToEquip)
 
 		//Get the Hand Socket
 		const USkeletalMeshSocket* HandSocket = GetMesh()->GetSocketByName(FName("RightHandSocket"));
+		FVector WeaponScale;
 		if (HandSocket)
 		{
 			//Attach the Weapon the hand socket RightHandSocket
 			HandSocket->AttachActor(WeaponToEquip, GetMesh());
 		}
-
 		if (EquippedWeapon == nullptr)
 		{
 			//-1 == no EquippedWeapon yet. No need to reverse the icon animation
@@ -611,6 +641,28 @@ bool AVirusCharacter::WeaponHasGage()
 	return EquippedWeapon->GetGageAmount() > 0.f;
 }
 
+bool AVirusCharacter::CheckReloading()
+{
+	if (EquippedWeapon == nullptr) return false;
+
+	return EquippedWeapon->GetWeapongageStatus() == EWeapongageStatus::EWS_Reloading;
+
+}
+
+void AVirusCharacter::PlayReloadMontatge()
+{
+	if (AnimInstance && ScaningMontage)
+	{
+		AnimInstance->Montage_Play(ScaningMontage);
+		AnimInstance->Montage_JumpToSection("Reload");
+	}
+}
+
+void AVirusCharacter::OnReloadMontageEnded()
+{
+	bReloading = false;
+}
+
 void AVirusCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
@@ -622,12 +674,22 @@ void AVirusCharacter::Tick(float DeltaTime)
 
 	//Check OverlappedItemCount, then trace for items
 	TraceForItems();
-	
+
+	AttackWeapon(DeltaTime);
+
+	if (GEngine && EquippedWeapon)
+	{
+		FVector WeaponScale = EquippedWeapon->GetActorRelativeScale3D();
+		//UE_LOG(LogTemp, Warning, TEXT("Equipped Weapon Scale : %f %f %f"), WeaponScale.X, WeaponScale.Y, WeaponScale.Z);
+		//이유를 모르겠다...ㅜㅜㅜ ㅜㅠ
+		EquippedWeapon->SetActorRelativeScale3D(FVector(1.0f));
+		FString Message = FString::Printf(TEXT("Equipped Weapon Scale : %f %f %f"), WeaponScale.X, WeaponScale.Y, WeaponScale.Z);
+		GEngine->AddOnScreenDebugMessage(1, 0.f, FColor::White, Message);
+	}
 }
 
 float AVirusCharacter::GetCrosshairSpreadMultiplier() const
 {
-
 	return CrosshairSpreadMultiplier;
 }
 
@@ -657,19 +719,25 @@ FVector AVirusCharacter::GetCameraInterpLocation()
 
 void AVirusCharacter::GetPickUpItem(AItem* Item)
 {
+	auto GetItem = Cast<AItem>(Item);
 	auto Weapon = Cast<AWeapon>(Item);
+
 	if (Weapon)
+	{
+		SwapWeapon(Weapon);
+	}
+	else
 	{
 		if (Inventory.Num() < INVENTORY_CAPACITY)
 		{
-			Weapon->SetSlotIndex(Inventory.Num());
-			Inventory.Add(Weapon);
-			Weapon->SetItemState(EItemState::EIS_PickedUp);
+			GetItem->SetSlotIndex(Inventory.Num());
+			Inventory.Add(GetItem);
+			UE_LOG(LogTemp, Log, TEXT("Add Inventory"));
+			GetItem->SetItemState(EItemState::EIS_PickedUp);
 		}
 		else //Inventory is full swap with EquippedWeapon
 		{
-			SwapWeapon(Weapon);
+			//SwapWeapon(Weapon);
 		}
-		
 	}
 }

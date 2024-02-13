@@ -203,6 +203,7 @@ void AItem::FinishInterping()
 	binterping = false;
 	if (Character)
 	{
+		GEngine->AddOnScreenDebugMessage(1, 0.f, FColor::White, FString::Printf(TEXT("HAS CHARACTER")));
 		Character->GetPickUpItem(this);
 	}
 	//Set Scale back to normal
@@ -215,6 +216,7 @@ void AItem::ItemInterp(float DeltaTime)
 	
 	if (Character && ItemZCurve)
 	{
+		GEngine->AddOnScreenDebugMessage(1, 0.f, FColor::White, FString::Printf(TEXT("HAS CHARACTER")));
 		//Elapsed time since we started ItemInterpTimer
 		const float ElapsedTime = GetWorldTimerManager().GetTimerElapsed(ItemInterpTimer);
 		//Get Curve value corresponding to ElapsedTime
@@ -296,6 +298,12 @@ void AItem::Tick(float DeltaTime)
 	
 	//Handle Item Interping when in the EquipInterping state
 	ItemInterp(DeltaTime);
+
+	if (Character)
+	{
+		//GEngine->AddOnScreenDebugMessage(1, 0.f, FColor::White, FString::Printf(TEXT("HAS CHARACTER")));
+	}
+
 }
 
 void AItem::SetItemState(EItemState State)
