@@ -312,5 +312,9 @@ public:
 
 	FORCEINLINE bool ShouldPlayPickupSound() const { return bShouldPlayPickupSound; }
 
+private:
+	float HeadShotDamage = 0.5f;
+	float BodyShotDamage = 0.1f;
+
 };
 

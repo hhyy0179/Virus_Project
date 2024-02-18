@@ -314,12 +314,18 @@ void AVirusCharacter::AttackWeapon(float DeltaTime)
 						//Head Shot
 						if (BeamHitResult.BoneName.ToString() == HitProgram->GetHeadBone())
 						{
-							UGameplayStatics::ApplyDamage(BeamHitResult.GetActor(), 50.f, GetController(), this, UDamageType::StaticClass());
+							if (HitProgram->Health > 0.f)
+							{
+								UGameplayStatics::ApplyDamage(BeamHitResult.GetActor(), HeadShotDamage, GetController(), this, UDamageType::StaticClass());
+							}
 						}
 						//Body Shot
 						else
 						{
-							UGameplayStatics::ApplyDamage(BeamHitResult.GetActor(), 20.f, GetController(), this, UDamageType::StaticClass());
+							if (HitProgram->Health > 0.f)
+							{
+								UGameplayStatics::ApplyDamage(BeamHitResult.GetActor(), BodyShotDamage, GetController(), this, UDamageType::StaticClass());
+							}
 						}
 
 						UE_LOG(LogTemp, Warning, TEXT("Hit Component: %s"), *BeamHitResult.BoneName.ToString());
