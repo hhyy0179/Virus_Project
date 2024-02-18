@@ -7,6 +7,7 @@
 #include "Components/WidgetComponent.h"
 #include "Camera/CameraComponent.h"
 #include "VirusCharacter.h"
+#include "PickupType.h"
 
 // Sets default values
 AItem::AItem() :
@@ -261,7 +262,6 @@ void AItem::ItemInterp(float DeltaTime)
 			SetActorScale3D(FVector(ScaleCurveValue));
 		}
 
-
 	}
 }
 
@@ -288,6 +288,62 @@ void AItem::OnConstruction(const FTransform& Transform)
 		ItemMesh->SetMaterial(MaterialIndex, DynamicMaterialInstance);
 	}
 
+	//Load the data in the Item Type Data Table
+
+	//Path to the Item Type Data Table
+	const FString TypeDataTablePath(TEXT("/Script/Engine.DataTable'/Game/_VirusGame/Items/DataTable/DT_ItemType.DT_ItemType'"));
+	UDataTable* TypeTableObject = Cast<UDataTable>(StaticLoadObject(UDataTable::StaticClass(), nullptr, *TypeDataTablePath));
+
+	if (TypeTableObject)
+	{
+		
+		FItemTypeDataTable* TypeRow = nullptr;
+
+		switch (ItemType)
+		{
+
+		case EItemType::EIT_AttackItem:
+			TypeRow = TypeTableObject->FindRow<FItemTypeDataTable>(FName("AttackItem"),TEXT(""));
+			break;
+
+		case EItemType::EIT_CCTVDefenseItem:
+			TypeRow = TypeTableObject->FindRow<FItemTypeDataTable>(FName("CCTVDefenseItem"), TEXT(""));
+			break;
+
+		case EItemType::EIT_AttackDefenseItem:
+			TypeRow = TypeTableObject->FindRow<FItemTypeDataTable>(FName("AttackDefenseItem"), TEXT(""));
+			break;
+
+		case EItemType::EIT_DoubleJump:
+			TypeRow = TypeTableObject->FindRow<FItemTypeDataTable>(FName("DoubleJump"), TEXT(""));
+			break;
+
+		case EItemType::EIT_SpeedItem:
+			TypeRow = TypeTableObject->FindRow<FItemTypeDataTable>(FName("SpeedUpItem"), TEXT(""));
+			break;
+
+		case EItemType::EIT_Key:
+			TypeRow = TypeTableObject->FindRow<FItemTypeDataTable>(FName("Key"), TEXT(""));
+			break;
+		}
+
+		if (TypeRow)
+		{
+			PickupType = TypeRow->PickupType;
+			GetItemMesh()->SetSkeletalMesh(TypeRow->ItemMesh);
+			SetItemName(TypeRow->ItemName);
+			SetItemIcon(TypeRow->InventoryIcon);
+			
+			ItemCount = TypeRow->ItemCount;
+			ItemDuration = TypeRow->ItemDuration;
+
+			SetPickUpSound(TypeRow->PickupSound);
+			SetUseSound(TypeRow->UseSound);
+		}
+		
+	}
+		
+		
 }
 
 

@@ -5,19 +5,9 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Engine/DataTable.h"
+#include "ItemType.h"
+#include "PickupType.h"
 #include "Item.generated.h"
-
-
-UENUM(BlueprintType)
-enum class EItemType : uint8
-{
-	EIT_AttackItem UMETA(DisplayName = "AttackItem"),
-	EIT_DefenseItem UMETA(DisplayName = "DefenseItem"),
-	EIT_DoubleJump UMETA(DisplayName = "DoubleJump"),
-	EIT_SpeedItem UMETA(DisplayName = "SpeedItem"),
-
-	EIT_MAX UMETA(Displayname = "DefaultMAX")
-};
 
 
 
@@ -34,9 +24,21 @@ enum class EItemState : uint8
 };
 
 USTRUCT(BlueprintType)
-struct FItemTypeTable : public FTableRowBase
+struct FItemTypeDataTable : public FTableRowBase
 {
 	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	EPickupType PickupType;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	USkeletalMesh* ItemMesh;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FString ItemName;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UTexture2D* InventoryIcon;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	int32 ItemCount;
@@ -45,15 +47,15 @@ struct FItemTypeTable : public FTableRowBase
 	int32 ItemDuration;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UTexture2D* IconBackground;
+	class USoundCue* PickupSound;
 
-
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	USoundCue* UseSound;
 };
 
 UCLASS()
 class VIRUS_API AItem : public AActor
 {
-
 	GENERATED_BODY()
 
 public:
@@ -62,7 +64,6 @@ public:
 
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
-
 
 protected:
 	// Called when the game starts or when spawned
@@ -183,14 +184,30 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Inventory, meta = (AllowPrivateAccess = "true"))
 	int32 ItemCount;
 
+	/** Duration for this item in the inventory */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Inventory, meta = (AllowPrivateAccess = "true"))
+	int32 ItemDuration;
+
 	/** Slot in the inventory array */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Inventory, meta = (AllowPrivateAccess = "true"))
 	int32 SlotIndex;
 
+	/** Type of the item */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ItemProperties, meta = (AllowPrivateAccess = "true"))
+	EItemType ItemType;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = ItemProperties, meta = (AllowPrivateAccess = "true"))
+	EPickupType PickupType;
+
 	/** Item Type Data Table */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = DataTable, meta = (AllowPrivateAccess = "true"))
-	class UDataTable* ItemTypeTable;
+	UDataTable* ItemTypeDataTable;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = ItemProperties, meta = (AllowPrivateAccess = "true"))
+	USoundCue* PickUpSound;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = ItemProperties, meta = (AllowPrivateAccess = "true"))
+	USoundCue* UseSound;
 
 public:
 	//Define Getter or Setter
@@ -205,7 +222,15 @@ public:
 	FORCEINLINE UNiagaraSystem* GetBeamParticles() const { return BeamParticles; }
 	FORCEINLINE int32 GetItemCount() const { return ItemCount; }
 	FORCEINLINE int32 GetSlotIndex() const { return SlotIndex; }
+
 	FORCEINLINE void SetSlotIndex(int32 Index) { SlotIndex = Index; }
+	FORCEINLINE void SetItemName(FString Name) { ItemName = Name; }
+	FORCEINLINE void SetItemIcon(UTexture2D* Icon) { IconItem = Icon; }
+
+	FORCEINLINE USoundCue* GetPickUpSound() const { return PickUpSound; }
+	FORCEINLINE void SetPickUpSound(USoundCue* Sound) { PickUpSound = Sound; }
+	FORCEINLINE USoundCue* GetUseSound() const { return UseSound; }
+	FORCEINLINE void SetUseSound(USoundCue* Sound) { UseSound = Sound; }
 
 	/** Called from the AVirusCharacter class */
 	void StartItemCurve(AVirusCharacter* Char);
