@@ -600,15 +600,6 @@ void AVirusCharacter::EquipWeapon(AWeapon* WeaponToEquip)
 			//Attach the Weapon the hand socket RightHandSocket
 			HandSocket->AttachActor(WeaponToEquip, GetMesh());
 		}
-		if (EquippedWeapon == nullptr)
-		{
-			//-1 == no EquippedWeapon yet. No need to reverse the icon animation
-			EquipItemDelegate.Broadcast(-1, WeaponToEquip->GetSlotIndex());
-		}
-		else
-		{
-			EquipItemDelegate.Broadcast(EquippedWeapon->GetSlotIndex(), WeaponToEquip->GetSlotIndex());
-		}
 		EquippedWeapon = WeaponToEquip;
 		EquippedWeapon->SetItemState(EItemState::EIS_Equipped);
 	}
@@ -677,14 +668,14 @@ void AVirusCharacter::Tick(float DeltaTime)
 
 	AttackWeapon(DeltaTime);
 
+	/* Set Equipped Weapon Relative World Scale default */
 	if (GEngine && EquippedWeapon)
 	{
 		FVector WeaponScale = EquippedWeapon->GetActorRelativeScale3D();
-		//UE_LOG(LogTemp, Warning, TEXT("Equipped Weapon Scale : %f %f %f"), WeaponScale.X, WeaponScale.Y, WeaponScale.Z);
 		//이유를 모르겠다...ㅜㅜㅜ ㅜㅠ
 		EquippedWeapon->SetActorRelativeScale3D(FVector(1.0f));
-		FString Message = FString::Printf(TEXT("Equipped Weapon Scale : %f %f %f"), WeaponScale.X, WeaponScale.Y, WeaponScale.Z);
-		GEngine->AddOnScreenDebugMessage(1, 0.f, FColor::White, Message);
+		//FString Message = FString::Printf(TEXT("Equipped Weapon Scale : %f %f %f"), WeaponScale.X, WeaponScale.Y, WeaponScale.Z);
+		//GEngine->AddOnScreenDebugMessage(1, 0.f, FColor::White, Message);
 	}
 }
 
@@ -728,16 +719,53 @@ void AVirusCharacter::GetPickUpItem(AItem* Item)
 	}
 	else
 	{
+		if (TempInventory.Num() < INVENTORY_CAPACITY)
+		{
+			//처음 담긴 오브젝트이면
+			if (!TempInventory.Contains(GetItem))
+			{
+				GetItem->SetSlotIndex(TempInventory.Num());
+			}
+			TempInventory.Add(GetItem, GetItem->GetItemCount());
+			FString Message = FString::Printf(TEXT("Get Slot Index : %d "), TempInventory.Num());
+			GEngine->AddOnScreenDebugMessage(1, 1.f, FColor::White, Message);
+			//FString Message = FString::Printf(TEXT("Get Slot Index : %d "), GetItem->GetSlotIndex());
+			//GEngine->AddOnScreenDebugMessage(1, 1.f, FColor::White, Message);
+			GetItem->SetItemState(EItemState::EIS_PickedUp);
+
+			// Play Widget Anim
+			if (TempInventory.Num() == 0)
+			{
+				EquipItemDelegate.Broadcast(-1, GetItem->GetSlotIndex());
+			}
+			else
+			{
+				EquipItemDelegate.Broadcast(GetItem->GetSlotIndex(),TempInventory.Num());
+				GEngine->AddOnScreenDebugMessage(1, 1.f, FColor::White, FString::Printf(TEXT("CurrentIndex: %d, NextIndex: %d"), GetItem->GetSlotIndex(), TempInventory.Num()));
+			}
+		}
+
+		/*
 		if (Inventory.Num() < INVENTORY_CAPACITY)
 		{
 			GetItem->SetSlotIndex(Inventory.Num());
 			Inventory.Add(GetItem);
-			UE_LOG(LogTemp, Log, TEXT("Add Inventory"));
+			FString Message = FString::Printf(TEXT("Get Slot Index : %d "), GetItem->GetSlotIndex());
+			GEngine->AddOnScreenDebugMessage(1, 1.f, FColor::White, Message);
 			GetItem->SetItemState(EItemState::EIS_PickedUp);
+
+			// Play Widget Anim
+			if (Inventory.Num() == 0)
+			{
+				EquipItemDelegate.Broadcast(-1, GetItem->GetSlotIndex());
+			}
+			else
+			{
+				EquipItemDelegate.Broadcast(GetItem->GetSlotIndex(), Inventory.Num());
+			}
 		}
-		else //Inventory is full swap with EquippedWeapon
-		{
-			//SwapWeapon(Weapon);
-		}
+		*/
+
 	}
 }
+
