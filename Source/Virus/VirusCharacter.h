@@ -8,9 +8,7 @@
 #include "Engine/SkeletalMeshSocket.h"
 #include "VirusCharacter.generated.h"
 
-
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FEquipItemDelegate, int32, CurrentSlotIndex, int32, NewSlotIndex);
-
 
 UCLASS(config=Game)
 class AVirusCharacter : public ACharacter
@@ -97,7 +95,7 @@ class AVirusCharacter : public ACharacter
 
 
 	/** Interp speed for zooming when aiming */
-	//UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
 	float ZoomInterpSpeed;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Animation, meta = (AllowPrivateAccess = "true"))
@@ -202,6 +200,11 @@ class AVirusCharacter : public ACharacter
 
 	const int32 INVENTORY_CAPACITY{ 5 };
 
+	/** An Map of AItem for our Inventory */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Inventory, meta = (AllowPrivateAccess = "true"))
+	TMap<AItem*, int32> TempInventory;
+
+
 	/** Delegate for sending slot information to InventoryBar when equipping */
 	UPROPERTY(BlueprintAssignable, Category = Delegates, meta = (AllowPrivateAccess = "true"))
 	FEquipItemDelegate EquipItemDelegate;
@@ -287,7 +290,6 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Controller")
 	class AVirusPlayerController* VirusPlayerController;
 
-
 	/** Returns CameraBoom subobject **/
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 	/** Returns FollowCamera subobject **/
@@ -310,5 +312,6 @@ public:
 	void GetPickUpItem(AItem* Item);
 
 	FORCEINLINE bool ShouldPlayPickupSound() const { return bShouldPlayPickupSound; }
+
 };
 
