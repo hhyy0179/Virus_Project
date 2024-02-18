@@ -10,7 +10,7 @@
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FEquipItemDelegate, int32, CurrentSlotIndex, int32, NewSlotIndex);
 
-UCLASS(config=Game)
+UCLASS(config = Game)
 class AVirusCharacter : public ACharacter
 {
 	GENERATED_BODY()
@@ -24,7 +24,7 @@ class AVirusCharacter : public ACharacter
 	class UCameraComponent* FollowCamera;
 
 	/** Look Rate while not Aiming */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Camera, meta = (AllowPrivateAccess = "true"), meta = (ClampMin = "0.0",ClampMax = "1.0",UIMin = "0.0",UIMax = "1.0"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Camera, meta = (AllowPrivateAccess = "true"), meta = (ClampMin = "0.0", ClampMax = "1.0", UIMin = "0.0", UIMax = "1.0"))
 	float HipLookRate;
 
 	/** Look Rate while Aiming */
@@ -128,18 +128,15 @@ class AVirusCharacter : public ACharacter
 	float CurrentHP;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Stats", meta = (AllowPrivateAccess = "true"))
-	float HeadShotDamage = 1.f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Stats", meta = (AllowPrivateAccess = "true"))
-	float BodyShotDamage = 1.f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Stats", meta = (AllowPrivateAccess = "true"))
 	bool bisDoubleJump;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Stats", meta = (AllowPrivateAccess = "true"))
+	bool bisScanning;
 
 	/** Determines the spread of the crosshairs */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Crosshairs, meta = (AllowPrivateAccess = "true"))
 	float CrosshairSpreadMultiplier;
-	
+
 	/** Velocity component for crosshairs spread */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Crosshairs, meta = (AllowPrivateAccess = "true"))
 	float CrosshairVelocityFactor;
@@ -161,7 +158,7 @@ class AVirusCharacter : public ACharacter
 
 	/** Number of overlapped AItems */
 	int8 OverlappedItemCount;
-	
+
 	/** Currently eqipped Weapon */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
 	class AWeapon* EquippedWeapon;
@@ -278,7 +275,7 @@ public:
 
 	// APawn interface
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-	
+
 	// To add mapping context
 	virtual void BeginPlay();
 
@@ -299,10 +296,12 @@ public:
 
 	FORCEINLINE bool GetDoubleJump() const { return bisDoubleJump; }
 
+	FORCEINLINE bool GetScanning() const { return bisScanning; }
+
 	UFUNCTION(BlueprintCallable)
 	float GetCrosshairSpreadMultiplier() const;
 
-	FORCEINLINE int8 GetOverlappedItemCount() const { return OverlappedItemCount;  }
+	FORCEINLINE int8 GetOverlappedItemCount() const { return OverlappedItemCount; }
 
 	/** Adds/ Subtracts to/from Overlapped ItemCount and updates bShouldTrace for Items */
 	void IncrementOverlappedItemCount(int8 Amount);

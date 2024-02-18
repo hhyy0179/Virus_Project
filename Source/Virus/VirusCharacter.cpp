@@ -56,7 +56,7 @@ AVirusCharacter::AVirusCharacter() :
 {
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
-	
+
 	// Don't rotate when the controller rotates. Let that just affect the camera.
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationYaw = true;
@@ -101,7 +101,7 @@ AVirusCharacter::AVirusCharacter() :
 	MinimapArm->bInheritRoll = false;
 
 	MinimapCapture = CreateDefaultSubobject<USceneCaptureComponent2D>(TEXT("MinimapCapture"));
-	MinimapCapture->SetupAttachment(MinimapArm, USpringArmComponent::SocketName); 
+	MinimapCapture->SetupAttachment(MinimapArm, USpringArmComponent::SocketName);
 	MinimapCapture->ProjectionType = ECameraProjectionMode::Orthographic;
 	MinimapCapture->OrthoWidth = 3000.0f;
 
@@ -194,7 +194,7 @@ void AVirusCharacter::Move(const FInputActionValue& Value)
 
 		// get forward vector
 		const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-	
+
 		// get right vector 
 		const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
 
@@ -208,7 +208,7 @@ void AVirusCharacter::Look(const FInputActionValue& Value)
 {
 	// input is a Vector2D
 	FVector2D LookAxisVector = Value.Get<FVector2D>();
-	float LookScaleX , LookScaleY;
+	float LookScaleX, LookScaleY;
 	if (Controller != nullptr)
 	{
 		// add yaw and pitch input to controller
@@ -239,10 +239,10 @@ void AVirusCharacter::DoubleJump(const FInputActionValue& Value)
 	{
 		if (AnimInstance && DoubleJumpMontage)
 		{
-			FRotator CharacterRotation = GetActorRotation(); 
-			FVector LaunchDirection = CharacterRotation.Vector(); 
+			FRotator CharacterRotation = GetActorRotation();
+			FVector LaunchDirection = CharacterRotation.Vector();
 			LaunchDirection.Normalize(); // vector normallize
-			float LaunchStrength = 25.0f; 
+			float LaunchStrength = 25.0f;
 			LaunchDirection.Z = 20.0f;
 
 			AnimInstance->Montage_Play(DoubleJumpMontage);
@@ -363,7 +363,7 @@ void AVirusCharacter::Scan(const FInputActionValue& Value)
 	{
 		bisScanning = true;
 	}
-	
+
 }
 
 void AVirusCharacter::StopScan(const FInputActionValue& Value)
@@ -433,7 +433,7 @@ void AVirusCharacter::Select(const FInputActionValue& Value)
 		TraceHitItem->StartItemCurve(this);
 		TraceHitItem = nullptr;
 	}
-	
+
 }
 
 void AVirusCharacter::StopSelect(const FInputActionValue& Value)
@@ -562,7 +562,7 @@ void AVirusCharacter::TraceForItems()
 			TraceHitItemLastFrame = TraceHitItem;
 		}
 	}
-	else if(TraceHitItemLastFrame)
+	else if (TraceHitItemLastFrame)
 	{
 		//No longer overlapping any items,
 		//Items last frame should not show widget
@@ -573,7 +573,7 @@ void AVirusCharacter::TraceForItems()
 
 AWeapon* AVirusCharacter::SpawnDefaultWeapon()
 {
-	if(DefaultWeaponClass)
+	if (DefaultWeaponClass)
 	{
 		//Spawn the Weapon
 		return GetWorld()->SpawnActor<AWeapon>(DefaultWeaponClass);
@@ -691,7 +691,7 @@ void AVirusCharacter::IncrementOverlappedItemCount(int8 Amount)
 		OverlappedItemCount = 0;
 		bShouldTraceForItems = false;
 	}
-	else 
+	else
 	{
 		OverlappedItemCount += Amount;
 		bShouldTraceForItems = true;
@@ -701,11 +701,11 @@ void AVirusCharacter::IncrementOverlappedItemCount(int8 Amount)
 FVector AVirusCharacter::GetCameraInterpLocation()
 {
 	const FVector CameraWorldLocation{ FollowCamera->GetComponentLocation() };
-	const FVector CameraForward { FollowCamera->GetForwardVector() };
+	const FVector CameraForward{ FollowCamera->GetForwardVector() };
 
 	//Desired = CameraWorldLocation + Forward*A + Up*B
 	return CameraWorldLocation + CameraForward * CameraInterpDistance
-			+ FVector(0.f, 0.f, CameraInterpElevation);
+		+ FVector(0.f, 0.f, CameraInterpElevation);
 }
 
 void AVirusCharacter::GetPickUpItem(AItem* Item)
@@ -740,7 +740,7 @@ void AVirusCharacter::GetPickUpItem(AItem* Item)
 			}
 			else
 			{
-				EquipItemDelegate.Broadcast(GetItem->GetSlotIndex(),TempInventory.Num());
+				EquipItemDelegate.Broadcast(GetItem->GetSlotIndex(), TempInventory.Num());
 				GEngine->AddOnScreenDebugMessage(1, 1.f, FColor::White, FString::Printf(TEXT("CurrentIndex: %d, NextIndex: %d"), GetItem->GetSlotIndex(), TempInventory.Num()));
 			}
 		}

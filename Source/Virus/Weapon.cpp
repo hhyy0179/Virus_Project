@@ -31,7 +31,7 @@ void AWeapon::Tick(float DeltaTime)
 	{
 		SetWeapongageProperties(GageStatus, DeltaTime);
 	}
-	
+
 }
 
 void AWeapon::ThrowWeapon()
@@ -102,7 +102,7 @@ void AWeapon::SetWeapongageProperties(EWeapongageStatus State, float DeltaTime)
 		{
 			GageAmount += DeltaGage * 5;
 		}
-		else 
+		else
 		{
 			GageAmount = MaxGageAmount;
 			SetWeapongageStatus(EWeapongageStatus::EWS_Normal);

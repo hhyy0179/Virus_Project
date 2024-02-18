@@ -20,18 +20,18 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "HackingGaugeManager.h"
 
-AAIProgramCharacter::AAIProgramCharacter():
+AAIProgramCharacter::AAIProgramCharacter() :
 	MaxHealth(100.f),
 	HeadBone("Head"),
 	HealthBarDisplayTime(4.f)
 {
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-	
+
 	Health = MaxHealth;
 
 	static ConstructorHelpers::FObjectFinder<UAnimSequence> anim(TEXT("/Game/_VirusGame/AI/AIProgramCharacter/Anim_AIProgram/NewWalking/Mutant_Dying.Mutant_Dying"));
-	
+
 	if (anim.Succeeded()) {
 		DieAnim = anim.Object;
 	}
@@ -46,7 +46,7 @@ AAIProgramCharacter::AAIProgramCharacter():
 	if (HealthBarClass.Succeeded())
 	{
 		HealthBarWidget->SetWidgetClass(HealthBarClass.Class);
-		
+
 		UE_LOG(LogTemp, Warning, TEXT("There is HealthBarclass"));
 	}
 	else
@@ -72,7 +72,7 @@ void AAIProgramCharacter::BeginPlay() {
 }
 
 void AAIProgramCharacter::ShowHealthBar()
-{	
+{
 	HPBarWidgetComponent->SetVisibility(true);
 	HPBar->SetPercent(Health / MaxHealth);
 	GetWorldTimerManager().ClearTimer(Timer);
@@ -124,7 +124,7 @@ UWidgetComponent* AAIProgramCharacter::GetWidgetComponentFromActor()
 
 void AAIProgramCharacter::ShowHealthBar_Implementation()
 {
-	
+
 }
 
 void AAIProgramCharacter::Die()
@@ -135,7 +135,7 @@ void AAIProgramCharacter::Die()
 	GetCharacterMovement()->MaxWalkSpeed = 0.f;
 
 	GetMesh()->PlayAnimation(DieAnim, false);
-	
+
 	UE_LOG(LogTemp, Warning, TEXT("CloneActor"));
 
 	GetCharacterMovement()->MaxWalkSpeed = 0.f;
@@ -145,7 +145,7 @@ void AAIProgramCharacter::Die()
 	HideHealthBar();
 	GetWorldTimerManager().ClearTimer(Timer);
 	GetWorldTimerManager().SetTimer(Timer, this, &AAIProgramCharacter::CloneActor, DieAnimTime);
-	
+
 	GaugeManager->ControlGauge(0.01f);
 }
 
@@ -193,7 +193,7 @@ void AAIProgramCharacter::BulletHit(FHitResult HitResult, float Damage)
 	{
 		UGameplayStatics::PlaySoundAtLocation(this, ImpactSound, GetActorLocation());
 
-	
+
 	}
 	if (ImpactParicles)
 	{
@@ -219,7 +219,7 @@ float AAIProgramCharacter::TakeDamage(float DamageAmount, FDamageEvent const& Da
 	{
 		Health -= DamageAmount;
 	}
-	
+
 	return DamageAmount;
 }
 

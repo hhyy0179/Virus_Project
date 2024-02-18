@@ -7,7 +7,7 @@
 #include "Weapon.generated.h"
 
 /**
- * 
+ *
  */
 
 UENUM(BlueprintType)
@@ -43,7 +43,7 @@ private:
 	bool bFalling;
 
 	/** Gage Amount for this Weapon */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Weapon Properties", meta = (AllowPrivateAccess ="true"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Properties", meta = (AllowPrivateAccess = "true"))
 	float GageAmount;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Properties", meta = (AllowPrivateAccess = "true"))
@@ -60,7 +60,7 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Enums")
 	EWeapongageStatus GageStatus;
-	
+
 	FORCEINLINE float GetGageAmount() const { return GageAmount; }
 	FORCEINLINE EWeapongageStatus GetWeapongageStatus() const { return GageStatus; }
 	FORCEINLINE void SetWeapongageStatus(EWeapongageStatus Status) { GageStatus = Status; }

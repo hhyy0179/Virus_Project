@@ -51,12 +51,12 @@ struct FItemTypeTable : public FTableRowBase
 };
 
 UCLASS()
-class VIRUS_API AItem : public AActor 
+class VIRUS_API AItem : public AActor
 {
 
 	GENERATED_BODY()
 
-public:	
+public:
 	// Sets default values for this actor's properties
 	AItem();
 
@@ -70,7 +70,7 @@ protected:
 
 	//Callback function for AddDynamic
 	UFUNCTION()
-	void OnSphereBeginOverlap(UPrimitiveComponent*OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+	void OnSphereBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
 	UFUNCTION()
 	void OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
@@ -85,7 +85,7 @@ protected:
 
 	virtual void InitializeCustomDepth();
 
-	virtual void OnConstruction(const FTransform& Transform);	
+	virtual void OnConstruction(const FTransform& Transform);
 
 	/** Pointer to the Character */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = ItemProperties)
@@ -151,10 +151,6 @@ private:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = ItemProperties, meta = (AllowPrivateAccess = "true"))
 	float ZCurveTime;
 
-	/** Pointer to the Character */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Item Properties", meta = (AllowPrivateAccess = "true"))
-	class AVirusCharacter* Character;
-
 	/** X and Y for the Item while interping in the EquipInterping State */
 	float ItemInterpX;
 	float ItemInterpY;
@@ -196,7 +192,7 @@ private:
 	class UDataTable* ItemTypeTable;
 
 
-public: 
+public:
 	//Define Getter or Setter
 	FORCEINLINE UWidgetComponent* GetPickUpWidget() const { return PickUpWidget; }
 	FORCEINLINE USphereComponent* GetAreaSphere() const { return AreaSphere; }
@@ -207,7 +203,7 @@ public:
 	FORCEINLINE UNiagaraSystem* GetLaserFlash() const { return LaserFlash; }
 	FORCEINLINE UNiagaraSystem* GetImpactParticles() const { return ImpactParticles; }
 	FORCEINLINE UNiagaraSystem* GetBeamParticles() const { return BeamParticles; }
-	FORCEINLINE int32 GetItemCount() const { return ItemCount;  }
+	FORCEINLINE int32 GetItemCount() const { return ItemCount; }
 	FORCEINLINE int32 GetSlotIndex() const { return SlotIndex; }
 	FORCEINLINE void SetSlotIndex(int32 Index) { SlotIndex = Index; }
 

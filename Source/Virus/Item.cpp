@@ -27,7 +27,7 @@ AItem::AItem() :
 	ItemCount(2),
 	SlotIndex(0)
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
 	ItemMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("ItemMesh"));
@@ -45,7 +45,7 @@ AItem::AItem() :
 	AreaSphere = CreateDefaultSubobject<USphereComponent>(TEXT("AreaSphere"));
 	AreaSphere->SetupAttachment(GetRootComponent());
 
-	
+
 }
 
 // Called when the game starts or when spawned
@@ -113,7 +113,7 @@ void AItem::SetItemProperties(EItemState State)
 
 		CollisionBox->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 
-		break;  
+		break;
 
 	case EItemState::EIS_Equipped:
 
@@ -140,6 +140,7 @@ void AItem::SetItemProperties(EItemState State)
 		//Set Mesh Properties
 		ItemMesh->SetSimulatePhysics(true);
 		ItemMesh->SetEnableGravity(true);
+		ItemMesh->SetVisibility(true);
 		ItemMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore); //모든 채널에 대해서 충돌 제한
 		ItemMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 		ItemMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldStatic, ECollisionResponse::ECR_Block);
@@ -212,7 +213,7 @@ void AItem::FinishInterping()
 void AItem::ItemInterp(float DeltaTime)
 {
 	if (!binterping) return;
-	
+
 	if (Character && ItemZCurve)
 	{
 		//Elapsed time since we started ItemInterpTimer
@@ -247,7 +248,7 @@ void AItem::ItemInterp(float DeltaTime)
 		SetActorLocation(ItemLocation, true, nullptr, ETeleportType::TeleportPhysics);
 
 		//Camera rotation this framw
-		const FRotator CameraRotation{ Character->GetFollowCamera()-> GetComponentRotation() };
+		const FRotator CameraRotation{ Character->GetFollowCamera()->GetComponentRotation() };
 
 		//Camera rotation plus initial Yaw Offset
 		FRotator ItemRotation{ 0.f, CameraRotation.Yaw + InterpInitialYawOffset, 0.f };
@@ -259,7 +260,7 @@ void AItem::ItemInterp(float DeltaTime)
 			const float ScaleCurveValue = ItemScaleCurve->GetFloatValue(ElapsedTime);
 			SetActorScale3D(FVector(ScaleCurveValue));
 		}
-		
+
 
 	}
 }
@@ -294,7 +295,7 @@ void AItem::OnConstruction(const FTransform& Transform)
 void AItem::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	
+
 	//Handle Item Interping when in the EquipInterping state
 	ItemInterp(DeltaTime);
 
