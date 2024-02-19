@@ -321,7 +321,7 @@ void AItem::OnConstruction(const FTransform& Transform)
 		case EItemType::EIT_SpeedItem:
 			TypeRow = TypeTableObject->FindRow<FItemTypeDataTable>(FName("SpeedUpItem"), TEXT(""));
 			break;
-
+			
 		case EItemType::EIT_Key:
 			TypeRow = TypeTableObject->FindRow<FItemTypeDataTable>(FName("Key"), TEXT(""));
 			break;

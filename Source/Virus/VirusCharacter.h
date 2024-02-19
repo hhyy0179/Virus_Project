@@ -199,7 +199,7 @@ class AVirusCharacter : public ACharacter
 
 	/** An Map of AItem for our Inventory */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Inventory, meta = (AllowPrivateAccess = "true"))
-	TMap<AItem*, int32> TempInventory;
+	TMap<FString, int32> TempInventory;
 
 
 	/** Delegate for sending slot information to InventoryBar when equipping */

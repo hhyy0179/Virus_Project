@@ -725,52 +725,40 @@ void AVirusCharacter::GetPickUpItem(AItem* Item)
 	}
 	else
 	{
-		if (TempInventory.Num() < INVENTORY_CAPACITY)
-		{
-			//처음 담긴 오브젝트이면
-			if (!TempInventory.Contains(GetItem))
+		//처음 담긴 오브젝트이면
+		if (!TempInventory.Contains(GetItem->GetItemName()))
+		{	
+			if (Inventory.Num() < INVENTORY_CAPACITY)
 			{
 				GetItem->SetSlotIndex(TempInventory.Num());
-			}
-			TempInventory.Add(GetItem, GetItem->GetItemCount());
-			FString Message = FString::Printf(TEXT("Get Slot Index : %d "), TempInventory.Num());
-			GEngine->AddOnScreenDebugMessage(1, 1.f, FColor::White, Message);
-			//FString Message = FString::Printf(TEXT("Get Slot Index : %d "), GetItem->GetSlotIndex());
-			//GEngine->AddOnScreenDebugMessage(1, 1.f, FColor::White, Message);
-			GetItem->SetItemState(EItemState::EIS_PickedUp);
-
-			// Play Widget Anim
-			if (TempInventory.Num() == 0)
-			{
-				EquipItemDelegate.Broadcast(-1, GetItem->GetSlotIndex());
-			}
-			else
-			{
-				EquipItemDelegate.Broadcast(GetItem->GetSlotIndex(), TempInventory.Num());
-				GEngine->AddOnScreenDebugMessage(1, 1.f, FColor::White, FString::Printf(TEXT("CurrentIndex: %d, NextIndex: %d"), GetItem->GetSlotIndex(), TempInventory.Num()));
+				Inventory.Add(GetItem);
+				TempInventory.Add(GetItem->GetItemName(), GetItem->GetItemCount());
 			}
 		}
-
-		/*
-		if (Inventory.Num() < INVENTORY_CAPACITY)
+		else
 		{
-			GetItem->SetSlotIndex(Inventory.Num());
-			Inventory.Add(GetItem);
-			FString Message = FString::Printf(TEXT("Get Slot Index : %d "), GetItem->GetSlotIndex());
-			GEngine->AddOnScreenDebugMessage(1, 1.f, FColor::White, Message);
-			GetItem->SetItemState(EItemState::EIS_PickedUp);
-
-			// Play Widget Anim
-			if (Inventory.Num() == 0)
-			{
-				EquipItemDelegate.Broadcast(-1, GetItem->GetSlotIndex());
-			}
-			else
-			{
-				EquipItemDelegate.Broadcast(GetItem->GetSlotIndex(), Inventory.Num());
-			}
+			TempInventory[GetItem->GetItemName()] += GetItem->GetItemCount();
 		}
-		*/
+			
+		int32 value = TempInventory[GetItem->GetItemName()];
+
+		FString Message = FString::Printf(TEXT("Get Item Count : %d "), value);
+		GEngine->AddOnScreenDebugMessage(1, 1.f, FColor::White, Message);
+		//FString Message = FString::Printf(TEXT("Get Slot Index : %d "), GetItem->GetSlotIndex());
+		//GEngine->AddOnScreenDebugMessage(1, 1.f, FColor::White, Message);
+		GetItem->SetItemState(EItemState::EIS_PickedUp);
+
+		// Play Widget Anim
+		if (TempInventory.Num() == 0)
+		{
+			EquipItemDelegate.Broadcast(-1, GetItem->GetSlotIndex());
+		}
+		else
+		{
+			EquipItemDelegate.Broadcast(GetItem->GetSlotIndex(), TempInventory.Num());
+			//GEngine->AddOnScreenDebugMessage(1, 1.f, FColor::White, FString::Printf(TEXT("CurrentIndex: %d, NextIndex: %d"), GetItem->GetSlotIndex(), TempInventory.Num()));
+		}
+		
 
 	}
 }

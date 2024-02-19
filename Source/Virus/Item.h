@@ -221,6 +221,7 @@ public:
 	FORCEINLINE UNiagaraSystem* GetImpactParticles() const { return ImpactParticles; }
 	FORCEINLINE UNiagaraSystem* GetBeamParticles() const { return BeamParticles; }
 	FORCEINLINE int32 GetItemCount() const { return ItemCount; }
+	FORCEINLINE FString GetItemName() const { return ItemName; }
 	FORCEINLINE int32 GetSlotIndex() const { return SlotIndex; }
 
 	FORCEINLINE void SetSlotIndex(int32 Index) { SlotIndex = Index; }
