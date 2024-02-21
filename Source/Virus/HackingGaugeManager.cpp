@@ -40,35 +40,38 @@ void AHackingGaugeManager::BeginPlay()
 
 		}
 	}
+	ControlGauge(0.09f);
 }
 
 // Called every frame
 void AHackingGaugeManager::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);	
-
-	if (PreventPercent == Percent) {
-		Count++;
-		if (Count == MaxCount) {
-			TArray<AActor*> FoundActors;
-			UGameplayStatics::GetAllActorsOfClass(GetWorld(), AAIAllyCharacter::StaticClass(), FoundActors);
-			if (FoundActors.Num() > 0) {
-				AAIAllyCharacter* AIAlly = Cast<AAIAllyCharacter>(FoundActors[0]);
-				AIAlly->CloneActor();
-				Count = 0;
-				Percent -= 0.01f;
-				ControlGauge(-0.01f);
-			}
-			else {
-				Count = 0;
-				UE_LOG(LogTemp, Warning, TEXT("There is No Allies"));
+	if(PreventPercent != 0.1f) {
+		if (PreventPercent == Percent) {
+			Count++;
+			if (Count == MaxCount) {
+				TArray<AActor*> FoundActors;
+				UGameplayStatics::GetAllActorsOfClass(GetWorld(), AAIAllyCharacter::StaticClass(), FoundActors);
+				if (FoundActors.Num() > 0) {
+					AAIAllyCharacter* AIAlly = Cast<AAIAllyCharacter>(FoundActors[0]);
+					AIAlly->CloneActor();
+					Count = 0;
+					Percent -= 0.01f;
+					ControlGauge(-0.01f);
+				}
+				else {
+					Count = 0;
+					UE_LOG(LogTemp, Warning, TEXT("There is No Allies"));
+				}
 			}
 		}
+		else {
+			PreventPercent = Percent;
+			Count = 0;
+		}
 	}
-	else {
-		PreventPercent = Percent;
-		Count = 0;
-	}
+	
 }
 
 void AHackingGaugeManager::ControlGauge(float Value)
