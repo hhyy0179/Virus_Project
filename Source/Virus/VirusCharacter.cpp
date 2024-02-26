@@ -15,6 +15,7 @@
 #include "Sound/SoundCue.h"
 #include "DrawDebugHelpers.h"
 #include "AIProgramCharacter.h"
+#include "AIVaccineCharacter2.h"
 #include "BulletHitInterface.h"
 #include "VirusPlayerController.h"
 #include "NiagaraFunctionLibrary.h"
@@ -309,6 +310,8 @@ void AVirusCharacter::AttackWeapon(float DeltaTime)
 					}
 
 					AAIProgramCharacter* HitProgram = Cast<AAIProgramCharacter>(BeamHitResult.GetActor());
+					AAIVaccineCharacter2* HitVaccine = Cast<AAIVaccineCharacter2>(BeamHitResult.GetActor());
+
 					if (HitProgram)
 					{
 						//Head Shot
@@ -323,6 +326,26 @@ void AVirusCharacter::AttackWeapon(float DeltaTime)
 						else
 						{
 							if (HitProgram->Health > 0.f)
+							{
+								UGameplayStatics::ApplyDamage(BeamHitResult.GetActor(), BodyShotDamage, GetController(), this, UDamageType::StaticClass());
+							}
+						}
+
+						UE_LOG(LogTemp, Warning, TEXT("Hit Component: %s"), *BeamHitResult.BoneName.ToString());
+					}
+					else if (HitVaccine) {
+						//Head Shot
+						if (BeamHitResult.BoneName.ToString() == HitVaccine->GetHeadBone())
+						{
+							if (HitVaccine->Health > 0.f)
+							{
+								UGameplayStatics::ApplyDamage(BeamHitResult.GetActor(), HeadShotDamage, GetController(), this, UDamageType::StaticClass());
+							}
+						}
+						//Body Shot
+						else
+						{
+							if (HitVaccine->Health > 0.f)
 							{
 								UGameplayStatics::ApplyDamage(BeamHitResult.GetActor(), BodyShotDamage, GetController(), this, UDamageType::StaticClass());
 							}

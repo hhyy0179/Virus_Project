@@ -146,7 +146,8 @@ void AAIProgramCharacter::Die()
 	GetWorldTimerManager().ClearTimer(Timer);
 	GetWorldTimerManager().SetTimer(Timer, this, &AAIProgramCharacter::CloneActor, DieAnimTime);
 
-	GaugeManager->ControlGauge(0.01f);
+	GaugeManager->Percent += 0.01f;
+	GaugeManager->ControlGauge(GaugeManager->Percent);
 }
 
 void AAIProgramCharacter::CloneActor()

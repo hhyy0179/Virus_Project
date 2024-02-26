@@ -98,10 +98,11 @@ void AAIVaccineCharacter2::HideHealthBar()
 
 void AAIVaccineCharacter2::Die()
 {
-	GaugeManager->ControlGauge(0.01f);
+	GaugeManager->Percent += 0.01f;
+	GaugeManager->ControlGauge(GaugeManager->Percent);
+
 	HideHealthBar();
 	GetWorld()->DestroyActor(this);
-	GaugeManager->ControlGauge(0.01f);
 	FTransform ActorTransform = this->GetActorTransform();
 	this->SetActorLocation(FVector(0.f, 0.f, 0.f));
 	
