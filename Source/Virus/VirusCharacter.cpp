@@ -18,6 +18,7 @@
 #include "AIVaccineCharacter2.h"
 #include "BulletHitInterface.h"
 #include "VirusPlayerController.h"
+#include "VirusGameInstance.h"
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraComponent.h"
 #include "NiagaraEmitter.h"
@@ -43,7 +44,7 @@ AVirusCharacter::AVirusCharacter() :
 	ZoomInterpSpeed(20.f),
 
 	//Turn rates for aiming/not aiming
-	HipLookRate(1.f),
+	HipLookRate(1.0f),
 	AimingLookRate(0.4f),
 
 	bShouldTraceForItems(false),
@@ -137,6 +138,11 @@ void AVirusCharacter::BeginPlay()
 	//Spawn the default weapon and attach it to the mesh
 	//EquipWeapon(SpawnDefaultWeapon());
 	//EquippedWeapon->DisableCustomDepth();
+
+	UVirusGameInstance* VirusInstance = Cast<UVirusGameInstance>(GetGameInstance());
+
+	HipLookRate = 0.3f * VirusInstance->MouseSensitivity;
+	AimingLookRate = 0.1f * VirusInstance->MouseSensitivity;
 }
 
 float AVirusCharacter::GetHP()
