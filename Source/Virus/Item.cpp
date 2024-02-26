@@ -46,7 +46,6 @@ AItem::AItem() :
 	AreaSphere = CreateDefaultSubobject<USphereComponent>(TEXT("AreaSphere"));
 	AreaSphere->SetupAttachment(GetRootComponent());
 
-
 }
 
 // Called when the game starts or when spawned
@@ -330,6 +329,9 @@ void AItem::OnConstruction(const FTransform& Transform)
 		if (TypeRow)
 		{
 			PickupType = TypeRow->PickupType;
+			ItemType = TypeRow->ItemType;
+			//SetItemType(TypeRow->ItemType);
+
 			GetItemMesh()->SetSkeletalMesh(TypeRow->ItemMesh);
 			SetItemName(TypeRow->ItemName);
 			SetItemIcon(TypeRow->InventoryIcon);
@@ -342,8 +344,6 @@ void AItem::OnConstruction(const FTransform& Transform)
 		}
 		
 	}
-		
-		
 }
 
 
