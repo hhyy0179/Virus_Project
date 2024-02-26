@@ -30,6 +30,9 @@ struct FItemTypeDataTable : public FTableRowBase
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	EPickupType PickupType;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	EItemType ItemType;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	USkeletalMesh* ItemMesh;
@@ -50,7 +53,7 @@ struct FItemTypeDataTable : public FTableRowBase
 	class USoundCue* PickupSound;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	USoundCue* UseSound;
+	class USoundCue* UseSound;
 };
 
 UCLASS()
@@ -185,7 +188,7 @@ private:
 	int32 ItemCount;
 
 	/** Duration for this item in the inventory */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Inventory, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Inventory, meta = (AllowPrivateAccess = "true"))
 	int32 ItemDuration;
 
 	/** Slot in the inventory array */
@@ -232,6 +235,9 @@ public:
 	FORCEINLINE void SetPickUpSound(USoundCue* Sound) { PickUpSound = Sound; }
 	FORCEINLINE USoundCue* GetUseSound() const { return UseSound; }
 	FORCEINLINE void SetUseSound(USoundCue* Sound) { UseSound = Sound; }
+
+	FORCEINLINE EItemType GetItemType() const { return ItemType; }
+	FORCEINLINE void SetItemType(EItemType Type) { ItemType = Type; }
 
 	/** Called from the AVirusCharacter class */
 	void StartItemCurve(AVirusCharacter* Char);

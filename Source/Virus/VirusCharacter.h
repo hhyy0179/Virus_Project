@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "InputActionValue.h"
+#include "ItemType.h"
 #include "Engine/SkeletalMeshSocket.h"
 #include "VirusCharacter.generated.h"
 
@@ -41,26 +42,29 @@ class AVirusCharacter : public ACharacter
 
 	/** Move Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	class UInputAction* MoveAction;
+	UInputAction* MoveAction;
 
 	/** Look Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	class UInputAction* LookAction;
+	UInputAction* LookAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	class UInputAction* ScanAction;
+	UInputAction* ScanAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	class UInputAction* HealAction;
+	UInputAction* HealAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	class UInputAction* AimingAction;
+	UInputAction* AimingAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	class UInputAction* SelectAction;
+	UInputAction* SelectAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	class UInputAction* ReloadAction;
+	UInputAction* ReloadAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* InventoryAction;
 
 	/** Scan Shot Sound cue*/
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input, meta = (AllowPrivateAccess = "true"))
@@ -208,6 +212,8 @@ class AVirusCharacter : public ACharacter
 
 	bool bReloading;
 
+	bool bDoubleJumpSkill;
+
 protected:
 
 	/** Called for movement input */
@@ -234,6 +240,8 @@ protected:
 	void StopAiming(const FInputActionValue& Value);
 
 	void Reload(const FInputActionValue& Value);
+
+	void GetInventory(const FInputActionValue& Value);
 
 	bool GetBeamEndLocation(const FVector& MuzzleSocketLocation, FHitResult& OutHitResult);
 
@@ -266,9 +274,11 @@ protected:
 
 	bool CheckReloading();
 
-	void PlayReloadMontatge();
+	void PlayReloadMontage();
 
 	void OnReloadMontageEnded();
+
+	void UseItem(EItemType Type);
 
 public:
 	AVirusCharacter();

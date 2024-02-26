@@ -53,7 +53,8 @@ AVirusCharacter::AVirusCharacter() :
 	CameraInterpDistance(150.f),
 	CameraInterpElevation(45.f),
 	bShouldPlayPickupSound(true),
-	bisScanning(false)
+	bisScanning(false),
+	bDoubleJumpSkill(false)
 {
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
@@ -178,6 +179,10 @@ void AVirusCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInp
 
 		//Reloading
 		EnhancedInputComponent->BindAction(ReloadAction, ETriggerEvent::Started, this, &AVirusCharacter::Reload);
+
+		//Using Item from the Inventory Slot
+		EnhancedInputComponent->BindAction(InventoryAction, ETriggerEvent::Started, this, &AVirusCharacter::GetInventory);
+
 	}
 
 }
@@ -186,7 +191,6 @@ void AVirusCharacter::Move(const FInputActionValue& Value)
 {
 	// input is a Vector2D
 	FVector2D MovementVector = Value.Get<FVector2D>();
-
 	if (Controller != nullptr)
 	{
 		// find out which way is forward
@@ -202,6 +206,7 @@ void AVirusCharacter::Move(const FInputActionValue& Value)
 		// add movement 
 		AddMovementInput(ForwardDirection, MovementVector.Y);
 		AddMovementInput(RightDirection, MovementVector.X);
+
 	}
 }
 
@@ -210,6 +215,8 @@ void AVirusCharacter::Look(const FInputActionValue& Value)
 	// input is a Vector2D
 	FVector2D LookAxisVector = Value.Get<FVector2D>();
 	float LookScaleX, LookScaleY;
+
+	
 	if (Controller != nullptr)
 	{
 		// add yaw and pitch input to controller
@@ -236,7 +243,7 @@ void AVirusCharacter::DoubleJump(const FInputActionValue& Value)
 
 	bisDoubleJump = JumpCurrentCount ? true : false;
 
-	if (CanJump() && bisDoubleJump)
+	if (CanJump() && bisDoubleJump && bDoubleJumpSkill)
 	{
 		if (AnimInstance && DoubleJumpMontage)
 		{
@@ -260,9 +267,10 @@ void AVirusCharacter::AttackWeapon(float DeltaTime)
 {
 	if (!bisScanning) return;
 	if (EquippedWeapon == nullptr) return;
+
 	if (CheckReloading())
 	{
-		PlayReloadMontatge();
+		PlayReloadMontage();
 	}
 
 	if (WeaponHasGage() && (!CheckReloading()))
@@ -440,7 +448,6 @@ bool AVirusCharacter::GetBeamEndLocation(const FVector& MuzzleSocketLocation, FH
 
 void AVirusCharacter::Heal(const FInputActionValue& Value)
 {
-
 	const USkeletalMeshSocket* HealVFXSocket = GetMesh()->GetSocketByName("HealVFX");
 	if (HealVFXSocket)
 	{
@@ -487,7 +494,29 @@ void AVirusCharacter::Reload(const FInputActionValue& Value)
 	if (!CheckReloading())
 	{
 		EquippedWeapon->SetWeapongageStatus(EWeapongageStatus::EWS_Reloading);
-		PlayReloadMontatge();
+		PlayReloadMontage();
+	}
+
+}
+
+void AVirusCharacter::GetInventory(const FInputActionValue& Value)
+{
+	float ItemKey = Value.Get<float>();
+	
+	if (ItemKey <= Inventory.Num())
+	{
+		AItem* GetItem = Cast<AItem>(Inventory[ItemKey - 1]);
+		FString ItemName = GetItem->GetItemName();
+		EItemType ItemType = GetItem->GetItemType();
+		TempInventory[ItemName]--;
+
+		if (TempInventory[ItemName] == 0)
+		{
+			TempInventory.Remove(ItemName);
+			Inventory.RemoveAt(ItemKey - 1);
+		}
+		UseItem(ItemType);
+		int32 GetItemIndex = GetItem->GetSlotIndex();
 	}
 
 }
@@ -669,7 +698,7 @@ bool AVirusCharacter::CheckReloading()
 
 }
 
-void AVirusCharacter::PlayReloadMontatge()
+void AVirusCharacter::PlayReloadMontage()
 {
 	if (AnimInstance && ScaningMontage)
 	{
@@ -681,6 +710,29 @@ void AVirusCharacter::PlayReloadMontatge()
 void AVirusCharacter::OnReloadMontageEnded()
 {
 	bReloading = false;
+}
+
+void AVirusCharacter::UseItem(EItemType Type)
+{
+	switch (Type)
+	{
+	case EItemType::EIT_AttackItem:
+
+		break;
+
+	case EItemType::EIT_AttackDefenseItem:
+		break;
+
+	case EItemType::EIT_CCTVDefenseItem:
+		break;
+
+	case EItemType::EIT_DoubleJump:
+		bDoubleJumpSkill = true;
+		break;
+
+	case EItemType::EIT_SpeedItem:
+		break;
+	}
 }
 
 void AVirusCharacter::Tick(float DeltaTime)
@@ -748,12 +800,11 @@ void AVirusCharacter::GetPickUpItem(AItem* Item)
 	}
 	else
 	{
-		//처음 담긴 오브젝트이면
 		if (!TempInventory.Contains(GetItem->GetItemName()))
 		{	
 			if (Inventory.Num() < INVENTORY_CAPACITY)
 			{
-				GetItem->SetSlotIndex(TempInventory.Num());
+				GetItem->SetSlotIndex(Inventory.Num());
 				Inventory.Add(GetItem);
 				TempInventory.Add(GetItem->GetItemName(), GetItem->GetItemCount());
 			}
@@ -762,7 +813,7 @@ void AVirusCharacter::GetPickUpItem(AItem* Item)
 		{
 			TempInventory[GetItem->GetItemName()] += GetItem->GetItemCount();
 		}
-			
+		
 		int32 value = TempInventory[GetItem->GetItemName()];
 
 		FString Message = FString::Printf(TEXT("Get Item Count : %d "), value);
@@ -778,7 +829,7 @@ void AVirusCharacter::GetPickUpItem(AItem* Item)
 		}
 		else
 		{
-			EquipItemDelegate.Broadcast(GetItem->GetSlotIndex(), TempInventory.Num());
+			EquipItemDelegate.Broadcast((GetItem->GetSlotIndex())-1, GetItem->GetSlotIndex());
 			//GEngine->AddOnScreenDebugMessage(1, 1.f, FColor::White, FString::Printf(TEXT("CurrentIndex: %d, NextIndex: %d"), GetItem->GetSlotIndex(), TempInventory.Num()));
 		}
 		
