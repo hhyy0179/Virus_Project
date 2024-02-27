@@ -40,8 +40,8 @@ void AHackingGaugeManager::BeginPlay()
 
 		}
 	}
-	Percent += 0.09f;
-	PreviousPercent += 0.09f;
+	Percent += 0.1f;
+	PreviousPercent += 0.1f;
 	ControlGauge(Percent);
 }
 
