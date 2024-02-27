@@ -15,8 +15,10 @@
 #include "Sound/SoundCue.h"
 #include "DrawDebugHelpers.h"
 #include "AIProgramCharacter.h"
+#include "AIVaccineCharacter2.h"
 #include "BulletHitInterface.h"
 #include "VirusPlayerController.h"
+#include "VirusGameInstance.h"
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraComponent.h"
 #include "NiagaraEmitter.h"
@@ -42,7 +44,7 @@ AVirusCharacter::AVirusCharacter() :
 	ZoomInterpSpeed(20.f),
 
 	//Turn rates for aiming/not aiming
-	HipLookRate(1.f),
+	HipLookRate(1.0f),
 	AimingLookRate(0.4f),
 
 	bShouldTraceForItems(false),
@@ -135,6 +137,11 @@ void AVirusCharacter::BeginPlay()
 	//Spawn the default weapon and attach it to the mesh
 	//EquipWeapon(SpawnDefaultWeapon());
 	//EquippedWeapon->DisableCustomDepth();
+
+	UVirusGameInstance* VirusInstance = Cast<UVirusGameInstance>(GetGameInstance());
+
+	HipLookRate = 0.3f * VirusInstance->MouseSensitivity;
+	AimingLookRate = 0.1f * VirusInstance->MouseSensitivity;
 }
 
 float AVirusCharacter::GetHP()
@@ -319,6 +326,8 @@ void AVirusCharacter::AttackWeapon(float DeltaTime)
 					}
 
 					AAIProgramCharacter* HitProgram = Cast<AAIProgramCharacter>(BeamHitResult.GetActor());
+					AAIVaccineCharacter2* HitVaccine = Cast<AAIVaccineCharacter2>(BeamHitResult.GetActor());
+
 					if (HitProgram)
 					{
 						//Head Shot
@@ -333,6 +342,26 @@ void AVirusCharacter::AttackWeapon(float DeltaTime)
 						else
 						{
 							if (HitProgram->Health > 0.f)
+							{
+								UGameplayStatics::ApplyDamage(BeamHitResult.GetActor(), BodyShotDamage, GetController(), this, UDamageType::StaticClass());
+							}
+						}
+
+						UE_LOG(LogTemp, Warning, TEXT("Hit Component: %s"), *BeamHitResult.BoneName.ToString());
+					}
+					else if (HitVaccine) {
+						//Head Shot
+						if (BeamHitResult.BoneName.ToString() == HitVaccine->GetHeadBone())
+						{
+							if (HitVaccine->Health > 0.f)
+							{
+								UGameplayStatics::ApplyDamage(BeamHitResult.GetActor(), HeadShotDamage, GetController(), this, UDamageType::StaticClass());
+							}
+						}
+						//Body Shot
+						else
+						{
+							if (HitVaccine->Health > 0.f)
 							{
 								UGameplayStatics::ApplyDamage(BeamHitResult.GetActor(), BodyShotDamage, GetController(), this, UDamageType::StaticClass());
 							}

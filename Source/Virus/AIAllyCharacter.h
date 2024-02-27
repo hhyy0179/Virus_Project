@@ -27,4 +27,7 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	void CloneActor();
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Combat)
+	class UAnimMontage* AttackMontage;
 };

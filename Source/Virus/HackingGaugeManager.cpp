@@ -40,44 +40,54 @@ void AHackingGaugeManager::BeginPlay()
 
 		}
 	}
-	ControlGauge(0.09f);
+	Percent += 0.09f;
+	PreviousPercent += 0.09f;
+	ControlGauge(Percent);
 }
 
 // Called every frame
 void AHackingGaugeManager::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);	
-	if(PreventPercent != 0.1f) {
-		if (PreventPercent == Percent) {
-			Count++;
-			if (Count == MaxCount) {
-				TArray<AActor*> FoundActors;
-				UGameplayStatics::GetAllActorsOfClass(GetWorld(), AAIAllyCharacter::StaticClass(), FoundActors);
-				if (FoundActors.Num() > 0) {
-					AAIAllyCharacter* AIAlly = Cast<AAIAllyCharacter>(FoundActors[0]);
-					AIAlly->CloneActor();
-					Count = 0;
-					Percent -= 0.01f;
-					ControlGauge(-0.01f);
-				}
-				else {
-					Count = 0;
-					UE_LOG(LogTemp, Warning, TEXT("There is No Allies"));
+	UE_LOG(LogTemp, Warning, TEXT("Previous Percent: %f, Current Percent: %f"), PreviousPercent, Percent);
+	if (PreviousPercent == Percent) { // There is no Change of Gauge
+		if (Percent == FixedPercent[CurrentPercentIndex + 1]) {
+			CurrentPercentIndex++; // Current Hacking Gauge is next Fixed rate 
+			UE_LOG(LogTemp, Warning, TEXT("CurrentPercentIndex: %d"), CurrentPercentIndex);
+		}
+		else if (Percent == FixedPercent[CurrentPercentIndex]) {
+		}
+		else {
+			if (PreviousPercent == Percent) { // There is no Change of Gauge -> Gauge decrease
+				Count++;
+				if (Count == MaxCount) {
+					UE_LOG(LogTemp, Warning, TEXT("MAX COUNT!"));
+					TArray<AActor*> FoundActors;
+					UGameplayStatics::GetAllActorsOfClass(GetWorld(), AAIAllyCharacter::StaticClass(), FoundActors);
+					if (FoundActors.Num() > 0) {
+						AAIAllyCharacter* AIAlly = Cast<AAIAllyCharacter>(FoundActors[0]);
+						AIAlly->CloneActor();
+						Count = 0;
+						Percent -= 0.01f;
+						PreviousPercent = Percent;
+						ControlGauge(Percent);
+					}
+					else { // There is no Allies so Gauge can not decrease
+						Count = 0;
+						UE_LOG(LogTemp, Warning, TEXT("There is No Allies"));
+					}
 				}
 			}
 		}
-		else {
-			PreventPercent = Percent;
-			Count = 0;
-		}
 	}
-	
+	else { // There is Change of Gauge
+		PreviousPercent = Percent;
+		Count = 0;
+	}
 }
 
 void AHackingGaugeManager::ControlGauge(float Value)
 {
-	Percent += Value;
-
 	const FString command = FString::Printf(TEXT("UpdatePercent %f"), Value);
 
 	HackingGauageWidget->CallFunctionByNameWithArguments(*command, Ar, NULL, true);

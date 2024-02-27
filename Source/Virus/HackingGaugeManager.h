@@ -24,10 +24,12 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	void ControlGauge(float Value);
 	int Count = 0; // 60fps의 경우 600까지 게이지가 그대로면 ally->> program 돌아가게
-	int MaxCount = 1500;
+	int MaxCount = 600;
 	TSubclassOf<UUserWidget> HackingGauageClass;
 	UUserWidget* HackingGauageWidget;
 public:
 	float Percent = 0.0f; // 퍼센트를 정수 값으로 표시
-	float PreventPercent = 0.0f;
+	float PreviousPercent = 0.0f;
+	float FixedPercent[6] = { 0.0f, 0.1f, 0.25f, 0.5f, 0.7f, 0.8f };
+	int CurrentPercentIndex = 0;
 };
