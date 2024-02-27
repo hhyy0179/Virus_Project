@@ -92,7 +92,6 @@ AVirusCharacter::AVirusCharacter() :
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
 
-
 	MinimapArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("MinimapArm"));
 	MinimapArm->SetupAttachment(RootComponent);
 	MinimapArm->TargetArmLength = 3000.0f; // The camera follows at this distance behind the character	
@@ -172,7 +171,7 @@ void AVirusCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInp
 		EnhancedInputComponent->BindAction(ScanAction, ETriggerEvent::Completed, this, &AVirusCharacter::StopScan);
 
 		//Heal
-		//EnhancedInputComponent->BindAction(HealAction, ETriggerEvent::Started, this, &AVirusCharacter::Heal);
+		EnhancedInputComponent->BindAction(HealAction, ETriggerEvent::Started, this, &AVirusCharacter::Heal);
 
 		//Aiming
 		EnhancedInputComponent->BindAction(AimingAction, ETriggerEvent::Started, this, &AVirusCharacter::Aiming);
@@ -457,6 +456,7 @@ bool AVirusCharacter::GetBeamEndLocation(const FVector& MuzzleSocketLocation, FH
 void AVirusCharacter::Heal(const FInputActionValue& Value)
 {
 	const USkeletalMeshSocket* HealVFXSocket = GetMesh()->GetSocketByName("HealVFX");
+
 	if (HealVFXSocket)
 	{
 		const FTransform HealVFXSocketTransform = HealVFXSocket->GetSocketTransform(GetMesh());
@@ -465,7 +465,6 @@ void AVirusCharacter::Heal(const FInputActionValue& Value)
 		{
 			UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), HealingVFX, HealVFXSocketTransform);
 		}
-
 	}
 
 }
