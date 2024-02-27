@@ -58,6 +58,9 @@ public:
 
 	void Die();
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
+	class UAnimMontage* AttackMontage;
+
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;

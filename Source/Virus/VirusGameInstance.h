@@ -20,4 +20,7 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	float SoundVolume = 0.3f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	FString UserName;
 };
