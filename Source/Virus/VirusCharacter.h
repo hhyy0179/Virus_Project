@@ -212,6 +212,13 @@ class AVirusCharacter : public ACharacter
 
 	bool bReloading;
 
+	/** Set this in Blurprints for the default heal class */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
+	TSubclassOf<class AHeal> HealClass;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
+	AHeal* SpawnedHealPack;
+
 protected:
 
 	/** Called for movement input */
@@ -277,6 +284,11 @@ protected:
 	void OnReloadMontageEnded();
 
 	void UseItem(EItemType Type, AItem* Item);
+
+	/** Spawns a HealPack */
+	AHeal* SpawnHealPack();
+	
+	void HealPackOverlap(float DeltaTime);
 
 public:
 	AVirusCharacter();

@@ -27,6 +27,7 @@
 #include "Components/SphereComponent.h"
 #include "Item.h"
 #include "Weapon.h"
+#include "Heal.h"
 
 //////////////////////////////////////////////////////////////////////////
 // AVirusCharacter
@@ -455,7 +456,8 @@ bool AVirusCharacter::GetBeamEndLocation(const FVector& MuzzleSocketLocation, FH
 
 void AVirusCharacter::Heal(const FInputActionValue& Value)
 {
-	const USkeletalMeshSocket* HealVFXSocket = GetMesh()->GetSocketByName("HealVFX");
+	/*
+	* const USkeletalMeshSocket* HealVFXSocket = GetMesh()->GetSocketByName("HealVFX");
 
 	if (HealVFXSocket)
 	{
@@ -467,6 +469,20 @@ void AVirusCharacter::Heal(const FInputActionValue& Value)
 		}
 	}
 
+	*/
+
+	SpawnedHealPack = SpawnHealPack();
+
+	if (SpawnedHealPack)
+	{
+		FDetachmentTransformRules DetachmentTransformRules(EDetachmentRule::KeepWorld, true);
+		SpawnedHealPack->GetItemMesh()->DetachFromComponent(DetachmentTransformRules);
+
+		SpawnedHealPack->SetHealStatus(EHealStatus::EHS_Falling);
+		SpawnedHealPack->ThrowHealPack();
+		
+	}
+	
 }
 
 void AVirusCharacter::Select(const FInputActionValue& Value)
@@ -496,6 +512,8 @@ void AVirusCharacter::StopAiming(const FInputActionValue& Value)
 
 void AVirusCharacter::Reload(const FInputActionValue& Value)
 {
+	if (EquippedWeapon == nullptr) return;
+
 	bReloading = true;
 
 	if (!CheckReloading())
@@ -746,6 +764,46 @@ void AVirusCharacter::UseItem(EItemType Type, AItem* Item)
 	}
 }
 
+AHeal* AVirusCharacter::SpawnHealPack()
+{
+	if (HealClass)
+	{
+		//Spawn the HealPack at Character Socket position
+
+		const USkeletalMeshSocket* HealPackSocket = GetMesh()->GetSocketByName("Heal");
+
+		if (HealPackSocket)
+		{
+			FTransform HealSocketTransform = HealPackSocket->GetSocketTransform(GetMesh());
+			return GetWorld()->SpawnActor<AHeal>(HealClass, HealSocketTransform);
+		}
+		
+	}
+	return nullptr;
+}
+
+void AVirusCharacter::HealPackOverlap(float DeltaTime)
+{
+	if (SpawnedHealPack == nullptr) return;
+
+	if (SpawnedHealPack->GetHealOverlap())
+	{
+
+		float DeltaHP = 20.0f * DeltaTime;
+
+		if (CurrentHP <= MaxHP)
+		{
+			CurrentHP += DeltaHP;
+		}
+		else
+		{
+			CurrentHP = MaxHP;
+		}
+
+	}
+	
+}
+
 void AVirusCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
@@ -759,6 +817,8 @@ void AVirusCharacter::Tick(float DeltaTime)
 	TraceForItems();
 
 	AttackWeapon(DeltaTime);
+
+	HealPackOverlap(DeltaTime);
 
 	/* Set Equipped Weapon Relative World Scale default */
 	if (GEngine && EquippedWeapon)
