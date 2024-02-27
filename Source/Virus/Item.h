@@ -239,6 +239,9 @@ public:
 	FORCEINLINE EItemType GetItemType() const { return ItemType; }
 	FORCEINLINE void SetItemType(EItemType Type) { ItemType = Type; }
 
+	FORCEINLINE int32 GetItemDuration() const { return ItemDuration; }
+
+
 	/** Called from the AVirusCharacter class */
 	void StartItemCurve(AVirusCharacter* Char);
 

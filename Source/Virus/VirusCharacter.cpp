@@ -52,8 +52,7 @@ AVirusCharacter::AVirusCharacter() :
 	CameraInterpDistance(150.f),
 	CameraInterpElevation(45.f),
 	bShouldPlayPickupSound(true),
-	bisScanning(false),
-	bDoubleJumpSkill(false)
+	bisScanning(false)
 {
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
@@ -105,7 +104,6 @@ AVirusCharacter::AVirusCharacter() :
 	MinimapCapture->SetupAttachment(MinimapArm, USpringArmComponent::SocketName);
 	MinimapCapture->ProjectionType = ECameraProjectionMode::Orthographic;
 	MinimapCapture->OrthoWidth = 3000.0f;
-
 }
 
 void AVirusCharacter::BeginPlay()
@@ -132,7 +130,8 @@ void AVirusCharacter::BeginPlay()
 		CameraDefaultFOV = GetFollowCamera()->FieldOfView;
 		CameraCurrentFOV = CameraDefaultFOV;
 	}
-
+	
+	JumpMaxCount = 1;
 	//Spawn the default weapon and attach it to the mesh
 	//EquipWeapon(SpawnDefaultWeapon());
 	//EquippedWeapon->DisableCustomDepth();
@@ -241,8 +240,8 @@ void AVirusCharacter::DoubleJump(const FInputActionValue& Value)
 	JumpKeyHoldTime = 0.0f;
 
 	bisDoubleJump = JumpCurrentCount ? true : false;
-
-	if (CanJump() && bisDoubleJump && bDoubleJumpSkill)
+	
+	if (CanJump() && bisDoubleJump)
 	{
 		if (AnimInstance && DoubleJumpMontage)
 		{
@@ -297,9 +296,12 @@ void AVirusCharacter::AttackWeapon(float DeltaTime)
 		{
 			FTransform SocketTransform = BarrelSocket->GetSocketTransform(GetMesh());
 			LaserFlash = EquippedWeapon->GetLaserFlash();
+
+			//Spawn LaserFlash
 			if (LaserFlash)
 			{
 				UNiagaraComponent* FlashInstance = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), LaserFlash, SocketTransform.GetLocation());
+				
 				FlashInstance->Activate();
 			}
 
@@ -346,7 +348,6 @@ void AVirusCharacter::AttackWeapon(float DeltaTime)
 						{
 							UNiagaraComponent* EndHitInstance = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), ImpactParticles, BeamHitResult.Location);
 							EndHitInstance->Activate();
-
 						}
 					}
 				}
@@ -363,6 +364,7 @@ void AVirusCharacter::AttackWeapon(float DeltaTime)
 
 						BeamInstance->Activate();
 					}
+
 				}
 
 			}
@@ -492,7 +494,7 @@ void AVirusCharacter::GetInventory(const FInputActionValue& Value)
 			TempInventory.Remove(ItemName);
 			Inventory.RemoveAt(ItemKey - 1);
 		}
-		UseItem(ItemType);
+		UseItem(ItemType,GetItem);
 		int32 GetItemIndex = GetItem->GetSlotIndex();
 	}
 
@@ -689,7 +691,7 @@ void AVirusCharacter::OnReloadMontageEnded()
 	bReloading = false;
 }
 
-void AVirusCharacter::UseItem(EItemType Type)
+void AVirusCharacter::UseItem(EItemType Type, AItem* Item)
 {
 	switch (Type)
 	{
@@ -698,17 +700,21 @@ void AVirusCharacter::UseItem(EItemType Type)
 		break;
 
 	case EItemType::EIT_AttackDefenseItem:
+		//int32 Time = Item->GetItemDuration();
+
 		break;
 
 	case EItemType::EIT_CCTVDefenseItem:
+
 		break;
 
 	case EItemType::EIT_DoubleJump:
-		bDoubleJumpSkill = true;
+		JumpMaxCount = 2;
 		break;
 
 	case EItemType::EIT_SpeedItem:
 		break;
+
 	}
 }
 

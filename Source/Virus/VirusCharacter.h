@@ -212,8 +212,6 @@ class AVirusCharacter : public ACharacter
 
 	bool bReloading;
 
-	bool bDoubleJumpSkill;
-
 protected:
 
 	/** Called for movement input */
@@ -278,7 +276,7 @@ protected:
 
 	void OnReloadMontageEnded();
 
-	void UseItem(EItemType Type);
+	void UseItem(EItemType Type, AItem* Item);
 
 public:
 	AVirusCharacter();
