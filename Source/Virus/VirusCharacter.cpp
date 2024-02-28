@@ -106,6 +106,15 @@ AVirusCharacter::AVirusCharacter() :
 	MinimapCapture->SetupAttachment(MinimapArm, USpringArmComponent::SocketName);
 	MinimapCapture->ProjectionType = ECameraProjectionMode::Orthographic;
 	MinimapCapture->OrthoWidth = 3000.0f;
+
+	static ConstructorHelpers::FClassFinder<UUserWidget> ZoomCLAsset(TEXT("/Game/_VirusGame/HUD/BP_ZoomCrossLine.BP_ZoomCrossLine_C"));
+
+	if (ZoomCLAsset.Succeeded()) {
+		ZoomCLClass = ZoomCLAsset.Class;
+	}
+	else {
+		UE_LOG(LogTemp, Warning, TEXT("there is no ZoomCLAsset"));
+	}
 }
 
 void AVirusCharacter::BeginPlay()
@@ -142,6 +151,11 @@ void AVirusCharacter::BeginPlay()
 
 	HipLookRate = 0.3f * VirusInstance->MouseSensitivity;
 	AimingLookRate = 0.1f * VirusInstance->MouseSensitivity;
+
+	if (IsValid(ZoomCLClass))
+	{
+		ZoomCLWidget = CreateWidget(GetWorld(), ZoomCLClass);
+	}
 }
 
 float AVirusCharacter::GetHP()
@@ -551,7 +565,7 @@ void AVirusCharacter::CameraInterpZoom(float DeltaTime)
 	if (bAiming)
 	{
 		CameraCurrentFOV = FMath::FInterpTo(CameraCurrentFOV, CameraZoomedFOV, DeltaTime, ZoomInterpSpeed);
-		CameraBoom->TargetArmLength = 150.0f;
+		CameraBoom->TargetArmLength = 100.0f;
 	}
 	else
 	{
