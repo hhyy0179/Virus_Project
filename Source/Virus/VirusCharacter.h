@@ -87,6 +87,9 @@ class AVirusCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
 	class UNiagaraSystem* BeamParticles;
 
+	TSubclassOf<UUserWidget> ZoomCLClass;
+	UUserWidget* ZoomCLWidget;
+
 	/** True when aiming*/
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
 	bool bAiming;
@@ -318,6 +321,7 @@ protected:
 	
 	void HealPackOverlap(float DeltaTime);
 
+	bool bZoomCrossLine = false;
 	void BroadHacking();
 
 	void CanUseHeal();

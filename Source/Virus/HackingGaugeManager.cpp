@@ -49,11 +49,9 @@ void AHackingGaugeManager::BeginPlay()
 void AHackingGaugeManager::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);	
-	UE_LOG(LogTemp, Warning, TEXT("Previous Percent: %f, Current Percent: %f"), PreviousPercent, Percent);
 	if (PreviousPercent == Percent) { // There is no Change of Gauge
 		if (Percent == FixedPercent[CurrentPercentIndex + 1]) {
 			CurrentPercentIndex++; // Current Hacking Gauge is next Fixed rate 
-			UE_LOG(LogTemp, Warning, TEXT("CurrentPercentIndex: %d"), CurrentPercentIndex);
 		}
 		else if (Percent == FixedPercent[CurrentPercentIndex]) {
 		}
@@ -61,7 +59,6 @@ void AHackingGaugeManager::Tick(float DeltaTime)
 			if (PreviousPercent == Percent) { // There is no Change of Gauge -> Gauge decrease
 				Count++;
 				if (Count == MaxCount) {
-					UE_LOG(LogTemp, Warning, TEXT("MAX COUNT!"));
 					TArray<AActor*> FoundActors;
 					UGameplayStatics::GetAllActorsOfClass(GetWorld(), AAIAllyCharacter::StaticClass(), FoundActors);
 					if (FoundActors.Num() > 0) {
@@ -74,7 +71,6 @@ void AHackingGaugeManager::Tick(float DeltaTime)
 					}
 					else { // There is no Allies so Gauge can not decrease
 						Count = 0;
-						UE_LOG(LogTemp, Warning, TEXT("There is No Allies"));
 					}
 				}
 			}

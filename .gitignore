@@ -73,3 +73,13 @@ Plugins/*/Intermediate/*
 # Cache files for the editor to use
 DerivedDataCache/*
 Content/IMC_Default.T3D
+Content/__ExternalActors__
+Content/_GENERATED
+Content/Character
+Content/Cooler
+Content/level_instance
+Content/LevelPrototyping
+Content/ModSci_Engineer
+Content/ModSci_EngiProps
+Content/ModSciInteriors
+Content/VirusMap.umap
