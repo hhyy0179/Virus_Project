@@ -28,6 +28,7 @@
 #include "Item.h"
 #include "Weapon.h"
 #include "Heal.h"
+#include "BroadHacking.h"
 
 //////////////////////////////////////////////////////////////////////////
 // AVirusCharacter
@@ -55,7 +56,12 @@ AVirusCharacter::AVirusCharacter() :
 	CameraInterpDistance(150.f),
 	CameraInterpElevation(45.f),
 	bShouldPlayPickupSound(true),
-	bisScanning(false)
+	bisScanning(false),
+
+	bCanUseHeal(true),
+	HealCoolTime(20.f),
+	BroadHackinglCoolTime(15.f),
+	bCanUseBroadHacking(true)
 {
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
@@ -73,7 +79,7 @@ AVirusCharacter::AVirusCharacter() :
 	// instead of recompiling to adjust them
 	GetCharacterMovement()->JumpZVelocity = 600.f;
 	GetCharacterMovement()->AirControl = 0.35f;
-	GetCharacterMovement()->MaxWalkSpeed = 500.f;
+	GetCharacterMovement()->MaxWalkSpeed = 300.f;
 	GetCharacterMovement()->MinAnalogWalkSpeed = 20.f;
 	GetCharacterMovement()->BrakingDecelerationWalking = 2000.f;
 
@@ -202,6 +208,9 @@ void AVirusCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInp
 		//Using Item from the Inventory Slot
 		EnhancedInputComponent->BindAction(InventoryAction, ETriggerEvent::Started, this, &AVirusCharacter::GetInventory);
 
+		//BroadHacking
+		EnhancedInputComponent->BindAction(BroadHackingAction, ETriggerEvent::Started, this, &AVirusCharacter::BroadHacking);
+
 	}
 
 }
@@ -225,7 +234,6 @@ void AVirusCharacter::Move(const FInputActionValue& Value)
 		// add movement 
 		AddMovementInput(ForwardDirection, MovementVector.Y);
 		AddMovementInput(RightDirection, MovementVector.X);
-
 	}
 }
 
@@ -485,17 +493,23 @@ void AVirusCharacter::Heal(const FInputActionValue& Value)
 
 	*/
 
-	SpawnedHealPack = SpawnHealPack();
-
-	if (SpawnedHealPack)
+	if (bCanUseHeal)
 	{
-		FDetachmentTransformRules DetachmentTransformRules(EDetachmentRule::KeepWorld, true);
-		SpawnedHealPack->GetItemMesh()->DetachFromComponent(DetachmentTransformRules);
+		bCanUseHeal = false;
+		SpawnedHealPack = SpawnHealPack();
 
-		SpawnedHealPack->SetHealStatus(EHealStatus::EHS_Falling);
-		SpawnedHealPack->ThrowHealPack();
-		
+		if (SpawnedHealPack)
+		{
+			FDetachmentTransformRules DetachmentTransformRules(EDetachmentRule::KeepWorld, true);
+			SpawnedHealPack->GetItemMesh()->DetachFromComponent(DetachmentTransformRules);
+
+			SpawnedHealPack->SetHealStatus(EHealStatus::EHS_Falling);
+			SpawnedHealPack->ThrowHealPack();
+		}
+
+		GetWorldTimerManager().SetTimer(HealCoolTimer, this, &AVirusCharacter::CanUseHeal, HealCoolTime);
 	}
+
 	
 }
 
@@ -760,7 +774,6 @@ void AVirusCharacter::UseItem(EItemType Type, AItem* Item)
 		break;
 
 	case EItemType::EIT_AttackDefenseItem:
-		//int32 Time = Item->GetItemDuration();
 
 		break;
 
@@ -773,6 +786,10 @@ void AVirusCharacter::UseItem(EItemType Type, AItem* Item)
 		break;
 
 	case EItemType::EIT_SpeedItem:
+		
+		GetCharacterMovement()->MaxWalkSpeed *= 3.0f;
+		float OverClockTime = Item->GetItemDuration();
+		GetWorldTimerManager().SetTimer(OverClockTimer, this, &AVirusCharacter::FinishOverClock, OverClockTime);
 		break;
 
 	}
@@ -816,6 +833,43 @@ void AVirusCharacter::HealPackOverlap(float DeltaTime)
 
 	}
 	
+}
+
+void AVirusCharacter::BroadHacking()
+{
+	if (bCanUseBroadHacking)
+	{
+		bCanUseBroadHacking = false;
+		const USkeletalMeshSocket* BroadHackingSocket = GetMesh()->GetSocketByName("BroadHacking");
+
+		if (BroadHackingSocket)
+		{
+			FTransform BroadHackingSocketTransform = BroadHackingSocket->GetSocketTransform(GetMesh());
+
+			ABroadHacking* AttackItem = GetWorld()->SpawnActor<ABroadHacking>(DefaultBroadHackingClass, BroadHackingSocketTransform);
+			AttackItem->HackingAction();
+			
+			GetWorldTimerManager().SetTimer(BroadHackingCoolTimer, this, &AVirusCharacter::CanUseBroadHacking, BroadHackinglCoolTime);
+		}
+	}
+	
+	
+
+}
+
+void AVirusCharacter::CanUseHeal()
+{
+	bCanUseHeal = true;
+}
+
+void AVirusCharacter::CanUseBroadHacking()
+{
+	bCanUseBroadHacking = true;
+}
+
+void AVirusCharacter::FinishOverClock()
+{
+	GetCharacterMovement()->MaxWalkSpeed = 300.f;
 }
 
 void AVirusCharacter::Tick(float DeltaTime)

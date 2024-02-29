@@ -47,7 +47,7 @@ UWidgetComponent* AAIVaccineCharacter2::GetWidgetComponentFromActor()
 {
 	if (this)
 	{
-		// ¾×ÅÍÀÇ ·çÆ® ÄÄÆ÷³ÍÆ®¸¦ °¡Á®¿É´Ï´Ù.
+		// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Æ® ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½É´Ï´ï¿½.
 
 		if (RootComponent)
 		{
@@ -143,6 +143,24 @@ float AAIVaccineCharacter2::TakeDamage(float DamageAmount, FDamageEvent const& D
 	}
 
 	return DamageAmount;
+}
+
+void AAIVaccineCharacter2::TakeDamage(float DamageAmount)
+{
+	Health -= DamageAmount;
+
+	UE_LOG(LogTemp, Warning, TEXT("Current Health: %f"), Health);
+
+	if (ImpactSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, ImpactSound, GetActorLocation());
+	}
+
+	ShowHealthBar();
+
+	if (Health <= 0) {
+		Die();
+	}
 }
 
 void AAIVaccineCharacter2::BulletHit_Implementation(FHitResult HitResult)

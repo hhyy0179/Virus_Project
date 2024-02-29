@@ -9,7 +9,7 @@
 AHeal::AHeal():
 	ThrowHealPackTime(0.7f),
 	bFalling(false),
-	HealingTime(20.f),
+	HealingTime(5.f),
 	bHealOverlapped(false),
 	HealStatus(EHealStatus::EHS_Falling)
 {
@@ -45,7 +45,6 @@ void AHeal::OnSphereBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActo
 		AVirusCharacter* Virus = Cast<AVirusCharacter>(OtherActor);
 		if (Virus)
 		{
-			GEngine->AddOnScreenDebugMessage(6, 3.0f, FColor::Magenta, FString::Printf(TEXT("Overlap!!!!!!!!!")));
 			bHealOverlapped = true;
 		}
 	}
@@ -59,7 +58,6 @@ void AHeal::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor*
 		AVirusCharacter* Virus = Cast<AVirusCharacter>(OtherActor);
 		if (Virus)
 		{
-			GEngine->AddOnScreenDebugMessage(6, 3.0f, FColor::Magenta, FString::Printf(TEXT("EndOverlap!!!!!!!!!")));
 			bHealOverlapped = false;
 		}
 	}
@@ -69,16 +67,10 @@ void AHeal::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-
-	//Keep the item upright
-	if (GetHealStatus() == EHealStatus::EHS_Falling && bFalling)
-	{
-		const  FRotator MeshRotation{ 0.f, GetItemMesh()->GetComponentRotation().Yaw, 0.f };
-		GetItemMesh()->SetWorldRotation(MeshRotation, false, nullptr, ETeleportType::TeleportPhysics);
-	}
+	const  FRotator MeshRotation{ 0.f, GetItemMesh()->GetComponentRotation().Yaw, 0.f };
+	GetItemMesh()->SetWorldRotation(MeshRotation, false, nullptr, ETeleportType::TeleportPhysics);
 
 }
-
 
 void AHeal::StopFalling()
 {
@@ -101,7 +93,7 @@ void AHeal::StopHealing()
 
 void AHeal::SetHealProperties(EHealStatus State)
 {
-	switch (State)
+	switch (State)  
 	{
 	case EHealStatus::EHS_Falling:
 
@@ -166,6 +158,7 @@ void AHeal::SetHealProperties(EHealStatus State)
 	}
 }
 
+
 void AHeal::ThrowHealPack()
 {
 	FRotator MeshRotation{ 0.f, GetItemMesh()->GetComponentRotation().Yaw, 0.f };
@@ -187,7 +180,6 @@ void AHeal::ThrowHealPack()
 	//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Yellow, GetItemMesh()->GetName());
 	bFalling = true;
 	GetWorldTimerManager().SetTimer(ThrowHealPackTimer, this, &AHeal::StopFalling, ThrowHealPackTime);
-	
 }
 
 void AHeal::SetHealStatus(EHealStatus Status)
