@@ -249,6 +249,9 @@ class AVirusCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Items, meta = (AllowPrivateAccess = "true"))
 	FTimerHandle OverClockTimer;
 
+	/** Set this in Blurprints for the default AttackItem class */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
+	TSubclassOf<class AAttackItem> AttackItemClass;
 
 protected:
 

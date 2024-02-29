@@ -109,7 +109,6 @@ void AHeal::SetHealProperties(EHealStatus State)
 		AreaSphere->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 		AreaSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
-
 		HealRange->SetVisibility(false);
 		HealRange->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 		HealRange->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
@@ -187,3 +186,4 @@ void AHeal::SetHealStatus(EHealStatus Status)
 	HealStatus = Status;
 	SetHealProperties(HealStatus);
 }
+

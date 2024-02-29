@@ -29,6 +29,7 @@
 #include "Weapon.h"
 #include "Heal.h"
 #include "BroadHacking.h"
+#include "AttackItem.h"
 
 //////////////////////////////////////////////////////////////////////////
 // AVirusCharacter
@@ -771,6 +772,30 @@ void AVirusCharacter::UseItem(EItemType Type, AItem* Item)
 	{
 	case EItemType::EIT_AttackItem:
 
+		if (AttackItemClass)
+		{
+			//Spawn the HealPack at Character Socket position
+
+			const USkeletalMeshSocket* ItemSocket = GetMesh()->GetSocketByName("Heal");
+
+			if (ItemSocket)
+			{
+				FTransform ItemSocketTransform = ItemSocket->GetSocketTransform(GetMesh());
+				AAttackItem* AttackItem = GetWorld()->SpawnActor<AAttackItem>(AttackItemClass, ItemSocketTransform);
+
+				if (AttackItem)
+				{
+					FDetachmentTransformRules DetachmentTransformRules(EDetachmentRule::KeepWorld, true);
+					AttackItem->GetItemMesh()->DetachFromComponent(DetachmentTransformRules);
+
+					AttackItem->SetAttackItemStatus(EAttackItemStatus::EAIS_Falling);
+					AttackItem->ThrowItem();
+				}
+			}
+
+		}
+
+
 		break;
 
 	case EItemType::EIT_AttackDefenseItem:
@@ -786,7 +811,6 @@ void AVirusCharacter::UseItem(EItemType Type, AItem* Item)
 		break;
 
 	case EItemType::EIT_SpeedItem:
-		
 		GetCharacterMovement()->MaxWalkSpeed *= 3.0f;
 		float OverClockTime = Item->GetItemDuration();
 		GetWorldTimerManager().SetTimer(OverClockTimer, this, &AVirusCharacter::FinishOverClock, OverClockTime);
