@@ -66,6 +66,9 @@ class AVirusCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* InventoryAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* BroadHackingAction;
+
 	/** Scan Shot Sound cue*/
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class USoundCue* FireSound;
@@ -219,6 +222,31 @@ class AVirusCharacter : public ACharacter
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
 	AHeal* SpawnedHealPack;
 
+	/** Set this in Blurprints for the default broadhacking class */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
+	TSubclassOf<class ABroadHacking> DefaultBroadHackingClass;
+
+	
+	FTimerHandle HealCoolTimer;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Skill, meta = (AllowPrivateAccess = "true"))
+	float HealCoolTime;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Skill, meta = (AllowPrivateAccess = "true"))
+	bool bCanUseHeal;
+
+	FTimerHandle BroadHackingCoolTimer;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Skill, meta = (AllowPrivateAccess = "true"))
+	float BroadHackinglCoolTime;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Skill, meta = (AllowPrivateAccess = "true"))
+	bool bCanUseBroadHacking;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Items, meta = (AllowPrivateAccess = "true"))
+	FTimerHandle OverClockTimer;
+
+
 protected:
 
 	/** Called for movement input */
@@ -289,6 +317,14 @@ protected:
 	AHeal* SpawnHealPack();
 	
 	void HealPackOverlap(float DeltaTime);
+
+	void BroadHacking();
+
+	void CanUseHeal();
+
+	void CanUseBroadHacking();
+
+	void FinishOverClock();
 
 public:
 	AVirusCharacter();

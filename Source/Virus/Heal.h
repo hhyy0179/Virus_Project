@@ -6,9 +6,6 @@
 #include "Item.h"
 #include "Heal.generated.h"
 
-/**
- * 
- */
 
 UENUM(BlueprintType)
 enum class EHealStatus : uint8
@@ -26,8 +23,6 @@ class VIRUS_API AHeal : public AActor
 {
 	GENERATED_BODY()
 	
-
-
 public:
 	AHeal();
 
@@ -51,6 +46,7 @@ protected:
 	void StopHealing();
 
 	void SetHealProperties(EHealStatus State);
+
 	
 private:
 	FTimerHandle ThrowHealPackTimer;
@@ -87,6 +83,5 @@ public:
 	FORCEINLINE EHealStatus GetHealStatus() const { return HealStatus; }
 	void SetHealStatus(EHealStatus Status);
 	FORCEINLINE bool GetHealOverlap() const { return bHealOverlapped; }
-
 	
 };
