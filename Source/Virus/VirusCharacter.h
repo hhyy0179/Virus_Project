@@ -87,8 +87,8 @@ class AVirusCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
 	class UNiagaraSystem* BeamParticles;
 
-	TSubclassOf<UUserWidget> ZoomCLClass;
-	UUserWidget* ZoomCLWidget;
+	TSubclassOf<UUserWidget> SkillClass;
+	UUserWidget* SkillWidget;
 
 	/** True when aiming*/
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
