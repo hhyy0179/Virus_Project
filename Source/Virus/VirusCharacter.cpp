@@ -31,6 +31,7 @@
 #include "BroadHacking.h"
 #include "Blueprint/WidgetBlueprintLibrary.h"
 #include "AttackItem.h"
+#include "AIOperatingSystem.h"
 
 //////////////////////////////////////////////////////////////////////////
 // AVirusCharacter
@@ -356,6 +357,7 @@ void AVirusCharacter::AttackWeapon(float DeltaTime)
 
 					AAIProgramCharacter* HitProgram = Cast<AAIProgramCharacter>(BeamHitResult.GetActor());
 					AAIVaccineCharacter2* HitVaccine = Cast<AAIVaccineCharacter2>(BeamHitResult.GetActor());
+					AAIOperatingSystem* HitOS = Cast<AAIOperatingSystem>(BeamHitResult.GetActor());
 
 					if (HitProgram)
 					{
@@ -375,8 +377,6 @@ void AVirusCharacter::AttackWeapon(float DeltaTime)
 								UGameplayStatics::ApplyDamage(BeamHitResult.GetActor(), BodyShotDamage, GetController(), this, UDamageType::StaticClass());
 							}
 						}
-
-						UE_LOG(LogTemp, Warning, TEXT("Hit Component: %s"), *BeamHitResult.BoneName.ToString());
 					}
 					else if (HitVaccine) {
 						//Head Shot
@@ -396,7 +396,15 @@ void AVirusCharacter::AttackWeapon(float DeltaTime)
 							}
 						}
 
-						UE_LOG(LogTemp, Warning, TEXT("Hit Component: %s"), *BeamHitResult.BoneName.ToString());
+					}
+					else if (HitOS) {
+						if (HitOS->Health > 0.f) {
+							HitOS->Health -= 10.f;
+							
+						}
+						else {
+							HitOS->Die();
+						}
 					}
 					else
 					{
