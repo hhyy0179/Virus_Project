@@ -20,7 +20,7 @@
 
 // Sets default values
 AAIVaccineCharacter2::AAIVaccineCharacter2():
-	MaxHealth(100.f),
+	MaxHealth(150.f),
 	HeadBone("Head"),
 	HealthBarDisplayTime(4.f)
 {
@@ -112,7 +112,7 @@ void AAIVaccineCharacter2::Die()
 		TSubclassOf<AAIAllyCharacter> NewActorClass = AAIAllyCharacter::StaticClass();
 		UObject* ClassPackage = ANY_PACKAGE;
 
-		UObject* SpawnActor = Cast<UObject>(StaticLoadObject(UObject::StaticClass(), NULL, TEXT("/Script/Engine.Blueprint'/Game/_VirusGame/Items/Key/BP_Key.BP_Key'")));
+		UObject* SpawnActor = Cast<UObject>(StaticLoadObject(UObject::StaticClass(), NULL, TEXT("/Script/Engine.Blueprint'/Game/_VirusGame/Items/Item/Item/BP_Item.BP_Item'")));
 		UBlueprint* GeneratedBP = Cast<UBlueprint>(SpawnActor);
 		GetWorld()->SpawnActor<AActor>(GeneratedBP->GeneratedClass, ActorTransform);
 	}
@@ -132,12 +132,12 @@ float AAIVaccineCharacter2::TakeDamage(float DamageAmount, FDamageEvent const& D
 
 	ShowHealthBar();
 
-	if (Health - DamageAmount == 0.f)
+	if (Health - DamageAmount <= 0.f)
 	{
 		Die();
 		Health = 0.f;
 	}
-	else if (Health - DamageAmount > 0.f)
+	else
 	{
 		Health -= DamageAmount;
 	}
