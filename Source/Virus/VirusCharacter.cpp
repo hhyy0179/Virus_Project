@@ -60,9 +60,10 @@ AVirusCharacter::AVirusCharacter() :
 	bisScanning(false),
 
 	bCanUseHeal(true),
-	HealCoolTime(20.f),
-	BroadHackinglCoolTime(15.f),
-	bCanUseBroadHacking(true)
+	HealCoolTime(5.f),
+	BroadHackinglCoolTime(5.f),
+	bCanUseBroadHacking(true),
+	CombatState(ECombatState::ECS_Unequipped)
 {
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
@@ -314,6 +315,7 @@ void AVirusCharacter::AttackWeapon(float DeltaTime)
 				AnimInstance->Montage_JumpToSection(FName("Attack"));
 			}
 		}
+
 		EquippedWeapon->SetWeapongageStatus(EWeapongageStatus::EWS_Normal);
 
 		/* Legacy */
@@ -324,7 +326,10 @@ void AVirusCharacter::AttackWeapon(float DeltaTime)
 
 		if (BarrelSocket)
 		{
-			FTransform SocketTransform = BarrelSocket->GetSocketTransform(GetMesh());
+		
+			//FTransform SocketTransform = BarrelSocket->GetSocketTransform(GetMesh(), ERelativeTransformSpace::RTS_World);
+			FTransform SocketTransform = EquippedWeapon->GetItemMesh()->GetSocketTransform(FName("BarrelSocket"), ERelativeTransformSpace::RTS_World);
+
 			LaserFlash = EquippedWeapon->GetLaserFlash();
 
 			//Spawn LaserFlash
@@ -479,39 +484,23 @@ bool AVirusCharacter::GetBeamEndLocation(const FVector& MuzzleSocketLocation, FH
 
 void AVirusCharacter::Heal(const FInputActionValue& Value)
 {
-	/*
-	* const USkeletalMeshSocket* HealVFXSocket = GetMesh()->GetSocketByName("HealVFX");
-
-	if (HealVFXSocket)
-	{
-		const FTransform HealVFXSocketTransform = HealVFXSocket->GetSocketTransform(GetMesh());
-
-		if (HealingVFX)
-		{
-			UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), HealingVFX, HealVFXSocketTransform);
-		}
-	}
-
-	*/
 
 	if (bCanUseHeal)
 	{
 		bCanUseHeal = false;
-		SpawnedHealPack = SpawnHealPack();
 
-		if (SpawnedHealPack)
+		if (AnimInstance && SkillMontage)
 		{
-			FDetachmentTransformRules DetachmentTransformRules(EDetachmentRule::KeepWorld, true);
-			SpawnedHealPack->GetItemMesh()->DetachFromComponent(DetachmentTransformRules);
-
-			SpawnedHealPack->SetHealStatus(EHealStatus::EHS_Falling);
-			SpawnedHealPack->ThrowHealPack();
+			AnimInstance->Montage_Play(SkillMontage);
+			AnimInstance->Montage_JumpToSection("Heal");
 		}
 
-		GetWorldTimerManager().SetTimer(HealCoolTimer, this, &AVirusCharacter::CanUseHeal, HealCoolTime);
-	}
+		float AnimPlayTime = 0.7f;
 
-	
+		FTimerHandle TimerHandle;
+		GetWorldTimerManager().SetTimer(TimerHandle, this, &AVirusCharacter::SpawnHealPackAfterAnim, AnimPlayTime);
+
+	}
 }
 
 void AVirusCharacter::Select(const FInputActionValue& Value)
@@ -531,7 +520,11 @@ void AVirusCharacter::StopSelect(const FInputActionValue& Value)
 
 void AVirusCharacter::Aiming(const FInputActionValue& Value)
 {
-	bAiming = true;
+	
+	if (CombatState != ECombatState::ECS_Reloading && CombatState != ECombatState::ECS_Equipping && CombatState != ECombatState::ECS_Stunned)
+	{
+		bAiming = true;
+	}
 }
 
 void AVirusCharacter::StopAiming(const FInputActionValue& Value)
@@ -543,6 +536,13 @@ void AVirusCharacter::Reload(const FInputActionValue& Value)
 {
 	if (EquippedWeapon == nullptr) return;
 
+	if (bAiming)
+	{
+		bAiming = false;
+		return;
+	}
+
+	CombatState = ECombatState::ECS_Reloading;
 	bReloading = true;
 
 	if (!CheckReloading())
@@ -550,7 +550,6 @@ void AVirusCharacter::Reload(const FInputActionValue& Value)
 		EquippedWeapon->SetWeapongageStatus(EWeapongageStatus::EWS_Reloading);
 		PlayReloadMontage();
 	}
-
 }
 
 void AVirusCharacter::GetInventory(const FInputActionValue& Value)
@@ -706,11 +705,12 @@ void AVirusCharacter::EquipWeapon(AWeapon* WeaponToEquip)
 
 		//Get the Hand Socket
 		const USkeletalMeshSocket* HandSocket = GetMesh()->GetSocketByName(FName("RightHandSocket"));
-		FVector WeaponScale;
+		
 		if (HandSocket)
 		{
 			//Attach the Weapon the hand socket RightHandSocket
 			HandSocket->AttachActor(WeaponToEquip, GetMesh());
+			CombatState = ECombatState::ECS_Equipping;
 		}
 		EquippedWeapon = WeaponToEquip;
 		EquippedWeapon->SetItemState(EItemState::EIS_Equipped);
@@ -761,11 +761,6 @@ void AVirusCharacter::PlayReloadMontage()
 	}
 }
 
-void AVirusCharacter::OnReloadMontageEnded()
-{
-	bReloading = false;
-}
-
 void AVirusCharacter::UseItem(EItemType Type, AItem* Item)
 {
 	switch (Type)
@@ -795,10 +790,45 @@ void AVirusCharacter::UseItem(EItemType Type, AItem* Item)
 
 		}
 
-
 		break;
 
 	case EItemType::EIT_AttackDefenseItem:
+
+		if (DefenseItemClass)
+		{
+			//Spawn the HealPack at Character Socket position
+
+			const USkeletalMeshSocket* ItemSocket = GetMesh()->GetSocketByName("Heal");
+
+			if (ItemSocket)
+			{
+				FTransform ItemSocketTransform = ItemSocket->GetSocketTransform(GetMesh());
+				AActor* DefenseItem = GetWorld()->SpawnActor<AActor>(DefenseItemClass, ItemSocketTransform);
+
+
+				if (DefenseItem)
+				{
+					UStaticMeshComponent* StaticMesh = Cast<UStaticMeshComponent>(DefenseItem->GetDefaultAttachComponent());
+					StaticMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Overlap);
+					//StaticMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Block);
+					StaticMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+
+					ItemSocket->AttachActor(DefenseItem, GetMesh());
+
+				}
+
+			}
+
+			/*
+			if (DefenseItem)
+			{
+				FDetachmentTransformRules DetachmentTransformRules(EDetachmentRule::KeepWorld, true);
+				DefenseItem->GetRootComponent()->DetachFromComponent(DetachmentTransformRules);
+				
+			}
+			*/
+
+		}
 
 		break;
 
@@ -806,16 +836,12 @@ void AVirusCharacter::UseItem(EItemType Type, AItem* Item)
 
 		break;
 
-	case EItemType::EIT_DoubleJump:
-		JumpMaxCount = 2;
-		break;
 
 	case EItemType::EIT_SpeedItem:
 		GetCharacterMovement()->MaxWalkSpeed *= 3.0f;
 		float OverClockTime = Item->GetItemDuration();
 		GetWorldTimerManager().SetTimer(OverClockTimer, this, &AVirusCharacter::FinishOverClock, OverClockTime);
 		break;
-
 	}
 }
 
@@ -832,10 +858,35 @@ AHeal* AVirusCharacter::SpawnHealPack()
 			FTransform HealSocketTransform = HealPackSocket->GetSocketTransform(GetMesh());
 			return GetWorld()->SpawnActor<AHeal>(HealClass, HealSocketTransform);
 		}
-		
 	}
 	return nullptr;
 }
+
+void AVirusCharacter::SpawnBroadHackingAfterAnim()
+{
+	const USkeletalMeshSocket* BroadHackingSocket = GetMesh()->GetSocketByName("Heal");
+
+	if (BroadHackingSocket)
+	{
+		FTransform BroadHackingSocketTransform = BroadHackingSocket->GetSocketTransform(GetMesh());
+
+		ABroadHacking* AttackItem = GetWorld()->SpawnActor<ABroadHacking>(DefaultBroadHackingClass, BroadHackingSocketTransform);
+
+		if (AttackItem)
+		{
+			FDetachmentTransformRules DetachmentTransformRules(EDetachmentRule::KeepWorld, true);
+			AttackItem->GetItemMesh()->DetachFromComponent(DetachmentTransformRules);
+
+			AttackItem->SetBroadHackingStatus(EBroadHackingStatus::EBHS_Falling);
+			AttackItem->ThrowAttackRange();
+
+			GetWorldTimerManager().SetTimer(BroadHackingCoolTimer, this, &AVirusCharacter::CanUseBroadHacking, BroadHackinglCoolTime);
+		}
+
+		
+	}
+}
+
 
 void AVirusCharacter::HealPackOverlap(float DeltaTime)
 {
@@ -864,21 +915,33 @@ void AVirusCharacter::BroadHacking()
 	if (bCanUseBroadHacking)
 	{
 		bCanUseBroadHacking = false;
-		const USkeletalMeshSocket* BroadHackingSocket = GetMesh()->GetSocketByName("BroadHacking");
 
-		if (BroadHackingSocket)
+		if (AnimInstance && SkillMontage)
 		{
-			FTransform BroadHackingSocketTransform = BroadHackingSocket->GetSocketTransform(GetMesh());
-
-			ABroadHacking* AttackItem = GetWorld()->SpawnActor<ABroadHacking>(DefaultBroadHackingClass, BroadHackingSocketTransform);
-			AttackItem->HackingAction();
-			
-			GetWorldTimerManager().SetTimer(BroadHackingCoolTimer, this, &AVirusCharacter::CanUseBroadHacking, BroadHackinglCoolTime);
+			AnimInstance->Montage_Play(SkillMontage);
+			AnimInstance->Montage_JumpToSection("BroadHacking");
 		}
+
+		const USkeletalMeshSocket* HealVFXSocket = GetMesh()->GetSocketByName("Heal");
+
+		if (HealVFXSocket)
+		{
+			const FTransform HealVFXSocketTransform = HealVFXSocket->GetSocketTransform(GetMesh());
+
+			if (HealingVFX)
+			{
+				UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), HealingVFX, HealVFXSocketTransform);
+			}
+		}
+
+
+		float AnimPlayTime = 0.7f;
+
+		FTimerHandle TimerHandle;
+		GetWorldTimerManager().SetTimer(TimerHandle, this, &AVirusCharacter::SpawnBroadHackingAfterAnim, AnimPlayTime);
+
 	}
 	
-	
-
 }
 
 void AVirusCharacter::CanUseHeal()
@@ -894,6 +957,23 @@ void AVirusCharacter::CanUseBroadHacking()
 void AVirusCharacter::FinishOverClock()
 {
 	GetCharacterMovement()->MaxWalkSpeed = 300.f;
+}
+
+void AVirusCharacter::SpawnHealPackAfterAnim()
+{
+	SpawnedHealPack = SpawnHealPack();
+
+	if (SpawnedHealPack)
+	{
+
+		FDetachmentTransformRules DetachmentTransformRules(EDetachmentRule::KeepWorld, true);
+		SpawnedHealPack->GetItemMesh()->DetachFromComponent(DetachmentTransformRules);
+
+		SpawnedHealPack->SetHealStatus(EHealStatus::EHS_Falling);
+		SpawnedHealPack->ThrowHealPack();
+	}
+	
+	GetWorldTimerManager().SetTimer(HealCoolTimer, this, &AVirusCharacter::CanUseHeal, HealCoolTime);
 }
 
 void AVirusCharacter::Tick(float DeltaTime)
@@ -963,40 +1043,48 @@ void AVirusCharacter::GetPickUpItem(AItem* Item)
 	}
 	else
 	{
-		if (!TempInventory.Contains(GetItem->GetItemName()))
-		{	
-			if (Inventory.Num() < INVENTORY_CAPACITY)
+		EItemType ItemType = GetItem->GetItemType();
+
+		if (ItemType != EItemType::EIT_DoubleJump)
+		{
+			if (!TempInventory.Contains(GetItem->GetItemName()))
 			{
-				GetItem->SetSlotIndex(Inventory.Num());
-				Inventory.Add(GetItem);
-				TempInventory.Add(GetItem->GetItemName(), GetItem->GetItemCount());
+				if (Inventory.Num() < INVENTORY_CAPACITY)
+				{
+					GetItem->SetSlotIndex(Inventory.Num());
+					Inventory.Add(GetItem);
+					TempInventory.Add(GetItem->GetItemName(), GetItem->GetItemCount());
+				}
+			}
+			else
+			{
+				TempInventory[GetItem->GetItemName()] += GetItem->GetItemCount();
+			}
+
+			int32 value = TempInventory[GetItem->GetItemName()];
+
+			FString Message = FString::Printf(TEXT("Get Item Count : %d "), value);
+			GEngine->AddOnScreenDebugMessage(1, 1.f, FColor::White, Message);
+			//FString Message = FString::Printf(TEXT("Get Slot Index : %d "), GetItem->GetSlotIndex());
+			//GEngine->AddOnScreenDebugMessage(1, 1.f, FColor::White, Message);
+			GetItem->SetItemState(EItemState::EIS_PickedUp);
+
+			// Play Widget Anim
+			if (TempInventory.Num() == 0)
+			{
+				EquipItemDelegate.Broadcast(-1, GetItem->GetSlotIndex());
+			}
+			else
+			{
+				EquipItemDelegate.Broadcast((GetItem->GetSlotIndex()) - 1, GetItem->GetSlotIndex());
+				//GEngine->AddOnScreenDebugMessage(1, 1.f, FColor::White, FString::Printf(TEXT("CurrentIndex: %d, NextIndex: %d"), GetItem->GetSlotIndex(), TempInventory.Num()));
 			}
 		}
 		else
 		{
-			TempInventory[GetItem->GetItemName()] += GetItem->GetItemCount();
+			JumpMaxCount = 2;
 		}
 		
-		int32 value = TempInventory[GetItem->GetItemName()];
-
-		FString Message = FString::Printf(TEXT("Get Item Count : %d "), value);
-		GEngine->AddOnScreenDebugMessage(1, 1.f, FColor::White, Message);
-		//FString Message = FString::Printf(TEXT("Get Slot Index : %d "), GetItem->GetSlotIndex());
-		//GEngine->AddOnScreenDebugMessage(1, 1.f, FColor::White, Message);
-		GetItem->SetItemState(EItemState::EIS_PickedUp);
-
-		// Play Widget Anim
-		if (TempInventory.Num() == 0)
-		{
-			EquipItemDelegate.Broadcast(-1, GetItem->GetSlotIndex());
-		}
-		else
-		{
-			EquipItemDelegate.Broadcast((GetItem->GetSlotIndex())-1, GetItem->GetSlotIndex());
-			//GEngine->AddOnScreenDebugMessage(1, 1.f, FColor::White, FString::Printf(TEXT("CurrentIndex: %d, NextIndex: %d"), GetItem->GetSlotIndex(), TempInventory.Num()));
-		}
-		
-
 	}
 }
 
