@@ -29,7 +29,9 @@
 #include "Weapon.h"
 #include "Heal.h"
 #include "BroadHacking.h"
+#include "Blueprint/WidgetBlueprintLibrary.h"
 #include "AttackItem.h"
+#include "AIOperatingSystem.h"
 
 //////////////////////////////////////////////////////////////////////////
 // AVirusCharacter
@@ -115,14 +117,14 @@ AVirusCharacter::AVirusCharacter() :
 	MinimapCapture->ProjectionType = ECameraProjectionMode::Orthographic;
 	MinimapCapture->OrthoWidth = 3000.0f;
 
-	static ConstructorHelpers::FClassFinder<UUserWidget> ZoomCLAsset(TEXT("/Game/_VirusGame/HUD/BP_ZoomCrossLine.BP_ZoomCrossLine_C"));
-
-	if (ZoomCLAsset.Succeeded()) {
-		ZoomCLClass = ZoomCLAsset.Class;
+	/*static ConstructorHelpers::FClassFinder<UUserWidget> SkillAsset(TEXT("/Game/_VirusGame/HUD/BP_SkillWidget.BP_SkillWidget_C"));
+	
+	if (SkillAsset.Succeeded()) {
+		SkillClass = SkillAsset.Class;
 	}
 	else {
-		UE_LOG(LogTemp, Warning, TEXT("there is no ZoomCLAsset"));
-	}
+		UE_LOG(LogTemp, Warning, TEXT("there is no SkillAsset"));
+	}*/
 }
 
 void AVirusCharacter::BeginPlay()
@@ -160,10 +162,15 @@ void AVirusCharacter::BeginPlay()
 	HipLookRate = 0.3f * VirusInstance->MouseSensitivity;
 	AimingLookRate = 0.1f * VirusInstance->MouseSensitivity;
 
-	if (IsValid(ZoomCLClass))
-	{
-		ZoomCLWidget = CreateWidget(GetWorld(), ZoomCLClass);
+	/*TArray<UUserWidget*> FindSkillWidget;
+
+	UWidgetBlueprintLibrary::GetAllWidgetsOfClass(GetWorld(), FindSkillWidget, SkillClass);
+
+	if (FindSkillWidget[0]) {
+		SkillWidget = FindSkillWidget[0];
+		UE_LOG(LogTemp, Warning, TEXT("Get SkillWidget"));
 	}
+	else UE_LOG(LogTemp, Warning, TEXT("There is no SkillWidget"));*/
 }
 
 float AVirusCharacter::GetHP()
@@ -355,6 +362,7 @@ void AVirusCharacter::AttackWeapon(float DeltaTime)
 
 					AAIProgramCharacter* HitProgram = Cast<AAIProgramCharacter>(BeamHitResult.GetActor());
 					AAIVaccineCharacter2* HitVaccine = Cast<AAIVaccineCharacter2>(BeamHitResult.GetActor());
+					AAIOperatingSystem* HitOS = Cast<AAIOperatingSystem>(BeamHitResult.GetActor());
 
 					if (HitProgram)
 					{
@@ -374,8 +382,6 @@ void AVirusCharacter::AttackWeapon(float DeltaTime)
 								UGameplayStatics::ApplyDamage(BeamHitResult.GetActor(), BodyShotDamage, GetController(), this, UDamageType::StaticClass());
 							}
 						}
-
-						UE_LOG(LogTemp, Warning, TEXT("Hit Component: %s"), *BeamHitResult.BoneName.ToString());
 					}
 					else if (HitVaccine) {
 						//Head Shot
@@ -395,7 +401,15 @@ void AVirusCharacter::AttackWeapon(float DeltaTime)
 							}
 						}
 
-						UE_LOG(LogTemp, Warning, TEXT("Hit Component: %s"), *BeamHitResult.BoneName.ToString());
+					}
+					else if (HitOS) {
+						if (HitOS->Health > 0.f) {
+							HitOS->Health -= 10.f;
+							
+						}
+						else {
+							HitOS->Die();
+						}
 					}
 					else
 					{

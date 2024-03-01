@@ -2,13 +2,11 @@
 
 
 #include "VirusPlayerController.h"
+#include "VirusCharacter.h"
 #include "Blueprint/UserWidget.h"
-
-
 
 void AVirusPlayerController::BeginPlay()
 {
-
 	Super::BeginPlay();
 
 	if (HUDOverlayAsset)
