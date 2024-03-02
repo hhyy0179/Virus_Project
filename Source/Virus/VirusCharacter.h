@@ -27,6 +27,8 @@ class AVirusCharacter : public ACharacter
 {
 	GENERATED_BODY()
 
+
+
 	/** Camera boom positioning the camera behind the character */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class USpringArmComponent* CameraBoom;
@@ -266,8 +268,16 @@ class AVirusCharacter : public ACharacter
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
 	TSubclassOf<class AActor> DefenseItemClass;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Cambat, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
 	ECombatState CombatState;
+
+	/** Hit React anim montage for when character is stunned */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
+	UAnimMontage* HitReactMontage;
+
+	/** Chance of being stunned when hit by an Vaccine */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
+	float StunChance;
 
 protected:
 
@@ -351,8 +361,13 @@ protected:
 
 	void SpawnBroadHackingAfterAnim();
 
+	void PlayStunMontage();
+
 public:
 	AVirusCharacter();
+
+	// Take combat damage
+	virtual float TakeDamage (float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
 
 	// APawn interface
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -364,6 +379,9 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	float GetHP();
+
+	UFUNCTION(BlueprintCallable)
+	void EndStun();
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Controller")
 	class AVirusPlayerController* VirusPlayerController;
@@ -394,6 +412,11 @@ public:
 	FORCEINLINE bool ShouldPlayPickupSound() const { return bShouldPlayPickupSound; }
 
 	FORCEINLINE ECombatState GetCombatState() const { return CombatState; }
+
+	UFUNCTION(BlueprintCallable)
+	void Stun();
+
+	FORCEINLINE float GetStunChance() const { return StunChance; }
 
 private:
 	float HeadShotDamage = 1.0f;
