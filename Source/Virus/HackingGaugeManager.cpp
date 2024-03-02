@@ -45,12 +45,8 @@ void AHackingGaugeManager::BeginPlay()
 		{
 			// À§Á¬À» ºäÆ÷Æ®¿¡ ¶ç¿ì´Â ÇÔ¼ö
 			HackingGauageWidget->AddToViewport();
-
 		}
 	}
-	Percent += 0.1f;
-	PreviousPercent += 0.1f;
-	ControlGauge(Percent);
 }
 
 // Called every frame
