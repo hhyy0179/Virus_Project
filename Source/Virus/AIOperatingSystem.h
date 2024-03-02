@@ -23,8 +23,10 @@ protected:
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+	UPROPERTY(BlueprintReadOnly, Category="Combat")
 	float Health = 1000.f;
-
+	UPROPERTY(BlueprintReadOnly, Category="Combat")
+	float MaxHealth = 1000.f;
 	class AHackingGaugeManager* GaugeManager;
 
 

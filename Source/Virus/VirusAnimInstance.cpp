@@ -58,11 +58,6 @@ void UVirusAnimInstance::UpdateAnimationProperties(float DeltaTime)
 		bAiming = MainCharacter->GetAiming();
 		bDoubleJump = MainCharacter->GetDoubleJump();
 
-		if (MainCharacter->GetCombatState() == ECombatState::ECS_Equipping)
-		{
-			bEquipped = true;
-		}
-	
 	}
 }
 

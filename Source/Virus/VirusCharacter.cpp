@@ -32,6 +32,7 @@
 #include "Blueprint/WidgetBlueprintLibrary.h"
 #include "AttackItem.h"
 #include "AIOperatingSystem.h"
+#include "Misc/OutputDeviceNull.h"
 
 //////////////////////////////////////////////////////////////////////////
 // AVirusCharacter
@@ -65,9 +66,7 @@ AVirusCharacter::AVirusCharacter() :
 	HealCoolTime(5.f),
 	BroadHackinglCoolTime(5.f),
 	bCanUseBroadHacking(true),
-	CombatState(ECombatState::ECS_Unequipped),
-
-	StunChance(.25f)
+	CombatState(ECombatState::ECS_Normal)
 {
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
@@ -173,6 +172,25 @@ void AVirusCharacter::BeginPlay()
 		UE_LOG(LogTemp, Warning, TEXT("Get SkillWidget"));
 	}
 	else UE_LOG(LogTemp, Warning, TEXT("There is no SkillWidget"));*/
+
+	if (UIManager) {
+		TArray<AActor*> FoundActors;
+		UGameplayStatics::GetAllActorsOfClass(GetWorld(), UIManager, FoundActors);
+		if (FoundActors.Num() > 0) {
+			UIMN = FoundActors[0];
+
+			/*const FString command = FString::Printf(TEXT("GameClear"));
+			FOutputDeviceNull Ar;
+
+			UIMN->CallFunctionByNameWithArguments(*command, Ar, NULL, true); When Die code*/
+		}
+		else {
+			UE_LOG(LogTemp, Warning, TEXT("UIMN Null"));
+		}
+	}
+	else {
+		UE_LOG(LogTemp, Warning, TEXT("UIManager Null"));
+	}
 }
 
 float AVirusCharacter::GetHP()
@@ -182,8 +200,7 @@ float AVirusCharacter::GetHP()
 
 void AVirusCharacter::EndStun()
 {
-	CombatState = ECombatState::ECS_Equipping;
-
+	CombatState = ECombatState::ECS_Normal;
 }
 
 float AVirusCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
@@ -326,12 +343,17 @@ void AVirusCharacter::AttackWeapon(float DeltaTime)
 	if (!bisScanning) return;
 	if (EquippedWeapon == nullptr) return;
 
-	if (CheckReloading())
+
+	if (CombatState == ECombatState::ECS_Normal)
 	{
-		PlayReloadMontage();
+		if (CheckReloading())
+		{
+			CombatState = ECombatState::ECS_Reloading;
+			PlayReloadMontage();
+		}
 	}
 
-	if (WeaponHasGage() && (!CheckReloading()))
+	if (WeaponHasGage() && CombatState == ECombatState::ECS_Normal)
 	{
 		if (Controller != nullptr && FireSound)
 		{
@@ -345,8 +367,6 @@ void AVirusCharacter::AttackWeapon(float DeltaTime)
 			}
 		}
 
-		EquippedWeapon->SetWeapongageStatus(EWeapongageStatus::EWS_Normal);
-
 		/* Legacy */
 		//const USkeletalMeshSocket* BarrelSocket = GetMesh()->GetSocketByName("BarrelSocket");
 
@@ -355,7 +375,7 @@ void AVirusCharacter::AttackWeapon(float DeltaTime)
 
 		if (BarrelSocket)
 		{
-		
+
 			//FTransform SocketTransform = BarrelSocket->GetSocketTransform(GetMesh(), ERelativeTransformSpace::RTS_World);
 			FTransform SocketTransform = EquippedWeapon->GetItemMesh()->GetSocketTransform(FName("BarrelSocket"), ERelativeTransformSpace::RTS_World);
 
@@ -365,7 +385,7 @@ void AVirusCharacter::AttackWeapon(float DeltaTime)
 			if (LaserFlash)
 			{
 				UNiagaraComponent* FlashInstance = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), LaserFlash, SocketTransform.GetLocation());
-				
+
 				FlashInstance->Activate();
 			}
 
@@ -427,7 +447,7 @@ void AVirusCharacter::AttackWeapon(float DeltaTime)
 					else if (HitOS) {
 						if (HitOS->Health > 0.f) {
 							HitOS->Health -= 10.f;
-							
+
 						}
 						else {
 							HitOS->Die();
@@ -464,6 +484,7 @@ void AVirusCharacter::AttackWeapon(float DeltaTime)
 
 		}
 	}
+
 }
 
 void AVirusCharacter::Scan(const FInputActionValue& Value)
@@ -525,6 +546,15 @@ void AVirusCharacter::Heal(const FInputActionValue& Value)
 	{
 		bCanUseHeal = false;
 
+		const FString command = FString::Printf(TEXT("E_Cooldown"));
+		FOutputDeviceNull Ar;
+
+		if (UIMN) UIMN->CallFunctionByNameWithArguments(*command, Ar, NULL, true);
+		else {
+			UE_LOG(LogTemp, Warning, TEXT("There is no UIMN"));
+			return;
+		}
+		
 		if (AnimInstance && SkillMontage)
 		{
 			AnimInstance->Montage_Play(SkillMontage);
@@ -535,7 +565,6 @@ void AVirusCharacter::Heal(const FInputActionValue& Value)
 
 		FTimerHandle TimerHandle;
 		GetWorldTimerManager().SetTimer(TimerHandle, this, &AVirusCharacter::SpawnHealPackAfterAnim, AnimPlayTime);
-
 	}
 }
 
@@ -557,7 +586,7 @@ void AVirusCharacter::StopSelect(const FInputActionValue& Value)
 void AVirusCharacter::Aiming(const FInputActionValue& Value)
 {
 	
-	if (CombatState != ECombatState::ECS_Reloading && CombatState != ECombatState::ECS_Equipping && CombatState != ECombatState::ECS_Stunned)
+	if (CombatState != ECombatState::ECS_Reloading && CombatState != ECombatState::ECS_Stunned)
 	{
 		bAiming = true;
 	}
@@ -578,14 +607,17 @@ void AVirusCharacter::Reload(const FInputActionValue& Value)
 		return;
 	}
 
-	CombatState = ECombatState::ECS_Reloading;
-	bReloading = true;
-
-	if (!CheckReloading())
+	if (CombatState == ECombatState::ECS_Normal)
 	{
-		EquippedWeapon->SetWeapongageStatus(EWeapongageStatus::EWS_Reloading);
-		PlayReloadMontage();
+		CombatState = ECombatState::ECS_Reloading;
+
+		if (!CheckReloading())
+		{
+			EquippedWeapon->SetWeapongageStatus(EWeapongageStatus::EWS_Reloading);
+			PlayReloadMontage();
+		}
 	}
+	
 }
 
 void AVirusCharacter::GetInventory(const FInputActionValue& Value)
@@ -746,7 +778,7 @@ void AVirusCharacter::EquipWeapon(AWeapon* WeaponToEquip)
 		{
 			//Attach the Weapon the hand socket RightHandSocket
 			HandSocket->AttachActor(WeaponToEquip, GetMesh());
-			CombatState = ECombatState::ECS_Equipping;
+			CombatState = ECombatState::ECS_Normal;
 		}
 		EquippedWeapon = WeaponToEquip;
 		EquippedWeapon->SetItemState(EItemState::EIS_Equipped);
@@ -951,6 +983,11 @@ void AVirusCharacter::BroadHacking()
 	if (bCanUseBroadHacking)
 	{
 		bCanUseBroadHacking = false;
+		
+		const FString command = FString::Printf(TEXT("Q_Cooldown"));
+		FOutputDeviceNull Ar;
+
+		UIMN->CallFunctionByNameWithArguments(*command, Ar, NULL, true);
 
 		if (AnimInstance && SkillMontage)
 		{
@@ -1140,6 +1177,11 @@ void AVirusCharacter::Stun()
 	FTimerHandle DelayAnim;
 	GetWorldTimerManager().SetTimer(DelayAnim, this, &AVirusCharacter::PlayStunMontage, 0.6f);
 
+}
 
+void AVirusCharacter::EndReload()
+{
+	CombatState = ECombatState::ECS_Normal;
+	EquippedWeapon->SetWeapongageStatus(EWeapongageStatus::EWS_Normal);
 }
 

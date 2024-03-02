@@ -23,6 +23,14 @@ AHackingGaugeManager::AHackingGaugeManager()
 		UE_LOG(LogTemp, Warning, TEXT("there is no HackingGuageWidget"));
 	}
 
+	static ConstructorHelpers::FClassFinder<UUserWidget> GameClearAsset(TEXT("/Game/_VirusGame/HUD/BP_GameClearScreen.BP_GameClearScreen_C"));
+
+	if (GameClearAsset.Succeeded()) {
+		GameClearClass = GameClearAsset.Class;
+	}
+	else {
+		UE_LOG(LogTemp, Warning, TEXT("there is no  GameClearWidget"));
+	}
 }
 
 // Called when the game starts or when spawned
@@ -87,5 +95,23 @@ void AHackingGaugeManager::ControlGauge(float Value)
 	const FString command = FString::Printf(TEXT("UpdatePercent %f"), Value);
 
 	HackingGauageWidget->CallFunctionByNameWithArguments(*command, Ar, NULL, true);
+
+	if (Value == 100) {
+		if (IsValid(GameClearClass))
+		{
+			GameClearWidget = Cast<UUserWidget>(CreateWidget(GetWorld(), GameClearClass));
+
+			if (IsValid(GameClearWidget))
+			{
+				// À§Á¬À» ºäÆ÷Æ®¿¡ ¶ç¿ì´Â ÇÔ¼ö
+				GameClearWidget->AddToViewport();
+
+			}
+		}
+		
+		else {
+			UE_LOG(LogTemp, Warning, TEXT("GameClearWidget is not valid"));
+		}
+	}
 }
 
