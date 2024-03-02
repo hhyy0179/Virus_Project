@@ -66,7 +66,9 @@ AVirusCharacter::AVirusCharacter() :
 	HealCoolTime(5.f),
 	BroadHackinglCoolTime(5.f),
 	bCanUseBroadHacking(true),
-	CombatState(ECombatState::ECS_Unequipped)
+	CombatState(ECombatState::ECS_Unequipped),
+
+	StunChance(.25f)
 {
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
@@ -196,6 +198,26 @@ void AVirusCharacter::BeginPlay()
 float AVirusCharacter::GetHP()
 {
 	return CurrentHP / MaxHP;
+}
+
+void AVirusCharacter::EndStun()
+{
+	CombatState = ECombatState::ECS_Equipping;
+
+}
+
+float AVirusCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+{
+	if (CurrentHP - DamageAmount <= 0.f)
+	{
+		CurrentHP = 0.f;
+	}
+	else
+	{
+		CurrentHP -= DamageAmount;
+	}
+	return DamageAmount;
+
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -1050,6 +1072,14 @@ void AVirusCharacter::Tick(float DeltaTime)
 	}
 }
 
+void AVirusCharacter::PlayStunMontage()
+{
+	if (AnimInstance && HitReactMontage)
+	{
+		AnimInstance->Montage_Play(HitReactMontage);
+	}
+}
+
 float AVirusCharacter::GetCrosshairSpreadMultiplier() const
 {
 	return CrosshairSpreadMultiplier;
@@ -1133,5 +1163,16 @@ void AVirusCharacter::GetPickUpItem(AItem* Item)
 		}
 		
 	}
+}
+
+
+void AVirusCharacter::Stun()
+{
+	CombatState = ECombatState::ECS_Stunned;
+	
+	FTimerHandle DelayAnim;
+	GetWorldTimerManager().SetTimer(DelayAnim, this, &AVirusCharacter::PlayStunMontage, 0.6f);
+
+
 }
 

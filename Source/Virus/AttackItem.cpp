@@ -93,7 +93,6 @@ void AAttackItem::StopFalling()
 
 void AAttackItem::SetItemProperties(EAttackItemStatus State)
 {
-
 	switch (State)
 	{
 	case EAttackItemStatus::EAIS_Falling:
