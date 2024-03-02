@@ -351,139 +351,141 @@ void AVirusCharacter::AttackWeapon(float DeltaTime)
 			CombatState = ECombatState::ECS_Reloading;
 			PlayReloadMontage();
 		}
-	}
 
-	if (WeaponHasGage() && CombatState == ECombatState::ECS_Normal)
-	{
-		if (Controller != nullptr && FireSound)
+		if (WeaponHasGage())
 		{
-			//UE_LOG(LogTemp, Warning, TEXT("Attack"));
-
-			UGameplayStatics::PlaySound2D(this, FireSound);
-			if (AnimInstance && ScaningMontage)
+			if (Controller != nullptr && FireSound)
 			{
-				AnimInstance->Montage_Play(ScaningMontage);
-				AnimInstance->Montage_JumpToSection(FName("Attack"));
-			}
-		}
+				//UE_LOG(LogTemp, Warning, TEXT("Attack"));
 
-		/* Legacy */
-		//const USkeletalMeshSocket* BarrelSocket = GetMesh()->GetSocketByName("BarrelSocket");
-
-		/* New */
-		const USkeletalMeshSocket* BarrelSocket = EquippedWeapon->GetItemMesh()->GetSocketByName("BarrelSocket");
-
-		if (BarrelSocket)
-		{
-
-			//FTransform SocketTransform = BarrelSocket->GetSocketTransform(GetMesh(), ERelativeTransformSpace::RTS_World);
-			FTransform SocketTransform = EquippedWeapon->GetItemMesh()->GetSocketTransform(FName("BarrelSocket"), ERelativeTransformSpace::RTS_World);
-
-			LaserFlash = EquippedWeapon->GetLaserFlash();
-
-			//Spawn LaserFlash
-			if (LaserFlash)
-			{
-				UNiagaraComponent* FlashInstance = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), LaserFlash, SocketTransform.GetLocation());
-
-				FlashInstance->Activate();
-			}
-
-			FHitResult BeamHitResult;
-			bool bBeamEnd = GetBeamEndLocation(SocketTransform.GetLocation(), BeamHitResult);
-			if (bBeamEnd)
-			{
-				// Does hit Actor implement BulletHitInterface?
-				if (BeamHitResult.GetActor())
+				UGameplayStatics::PlaySound2D(this, FireSound);
+				if (AnimInstance && ScaningMontage)
 				{
-					IBulletHitInterface* BulletHitInterface = Cast<IBulletHitInterface>(BeamHitResult.GetActor());
-					if (BulletHitInterface)
-					{
-						BulletHitInterface->BulletHit_Implementation(BeamHitResult);
-					}
+					AnimInstance->Montage_Play(ScaningMontage);
+					AnimInstance->Montage_JumpToSection(FName("Attack"));
+				}
+			}
 
-					AAIProgramCharacter* HitProgram = Cast<AAIProgramCharacter>(BeamHitResult.GetActor());
-					AAIVaccineCharacter2* HitVaccine = Cast<AAIVaccineCharacter2>(BeamHitResult.GetActor());
-					AAIOperatingSystem* HitOS = Cast<AAIOperatingSystem>(BeamHitResult.GetActor());
+			/* Legacy */
+			//const USkeletalMeshSocket* BarrelSocket = GetMesh()->GetSocketByName("BarrelSocket");
 
-					if (HitProgram)
-					{
-						//Head Shot
-						if (BeamHitResult.BoneName.ToString() == HitProgram->GetHeadBone())
-						{
-							if (HitProgram->Health > 0.f)
-							{
-								UGameplayStatics::ApplyDamage(BeamHitResult.GetActor(), HeadShotDamage, GetController(), this, UDamageType::StaticClass());
-							}
-						}
-						//Body Shot
-						else
-						{
-							if (HitProgram->Health > 0.f)
-							{
-								UGameplayStatics::ApplyDamage(BeamHitResult.GetActor(), BodyShotDamage, GetController(), this, UDamageType::StaticClass());
-							}
-						}
-					}
-					else if (HitVaccine) {
-						//Head Shot
-						if (BeamHitResult.BoneName.ToString() == HitVaccine->GetHeadBone())
-						{
-							if (HitVaccine->Health > 0.f)
-							{
-								UGameplayStatics::ApplyDamage(BeamHitResult.GetActor(), HeadShotDamage, GetController(), this, UDamageType::StaticClass());
-							}
-						}
-						//Body Shot
-						else
-						{
-							if (HitVaccine->Health > 0.f)
-							{
-								UGameplayStatics::ApplyDamage(BeamHitResult.GetActor(), BodyShotDamage, GetController(), this, UDamageType::StaticClass());
-							}
-						}
+			/* New */
+			const USkeletalMeshSocket* BarrelSocket = EquippedWeapon->GetItemMesh()->GetSocketByName("BarrelSocket");
 
-					}
-					else if (HitOS) {
-						if (HitOS->Health > 0.f) {
-							HitOS->Health -= 10.f;
+			if (BarrelSocket)
+			{
 
-						}
-						else {
-							HitOS->Die();
-						}
-					}
-					else
-					{
-						ImpactParticles = EquippedWeapon->GetImpactParticles();
-						//Spawn default particles
-						if (ImpactParticles)
-						{
-							UNiagaraComponent* EndHitInstance = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), ImpactParticles, BeamHitResult.Location);
-							EndHitInstance->Activate();
-						}
-					}
+				//FTransform SocketTransform = BarrelSocket->GetSocketTransform(GetMesh(), ERelativeTransformSpace::RTS_World);
+				FTransform SocketTransform = EquippedWeapon->GetItemMesh()->GetSocketTransform(FName("BarrelSocket"), ERelativeTransformSpace::RTS_World);
+
+				LaserFlash = EquippedWeapon->GetLaserFlash();
+
+				//Spawn LaserFlash
+				if (LaserFlash)
+				{
+					UNiagaraComponent* FlashInstance = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), LaserFlash, SocketTransform.GetLocation());
+
+					FlashInstance->Activate();
 				}
 
-				BeamParticles = EquippedWeapon->GetBeamParticles();
-				if (BeamParticles)
+				FHitResult BeamHitResult;
+				bool bBeamEnd = GetBeamEndLocation(SocketTransform.GetLocation(), BeamHitResult);
+				if (bBeamEnd)
 				{
-					UNiagaraComponent* BeamInstance = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), BeamParticles, SocketTransform.GetLocation());
-
-					if (BeamInstance)
+					// Does hit Actor implement BulletHitInterface?
+					if (BeamHitResult.GetActor())
 					{
-						BeamInstance->SetVectorParameter(FName("LaserStart"), SocketTransform.GetLocation());
-						BeamInstance->SetVectorParameter(FName("LaserEnd"), BeamHitResult.Location);
+						IBulletHitInterface* BulletHitInterface = Cast<IBulletHitInterface>(BeamHitResult.GetActor());
+						if (BulletHitInterface)
+						{
+							BulletHitInterface->BulletHit_Implementation(BeamHitResult);
+						}
 
-						BeamInstance->Activate();
+						AAIProgramCharacter* HitProgram = Cast<AAIProgramCharacter>(BeamHitResult.GetActor());
+						AAIVaccineCharacter2* HitVaccine = Cast<AAIVaccineCharacter2>(BeamHitResult.GetActor());
+						AAIOperatingSystem* HitOS = Cast<AAIOperatingSystem>(BeamHitResult.GetActor());
+
+						if (HitProgram)
+						{
+							//Head Shot
+							if (BeamHitResult.BoneName.ToString() == HitProgram->GetHeadBone())
+							{
+								if (HitProgram->Health > 0.f)
+								{
+									UGameplayStatics::ApplyDamage(BeamHitResult.GetActor(), HeadShotDamage, GetController(), this, UDamageType::StaticClass());
+								}
+							}
+							//Body Shot
+							else
+							{
+								if (HitProgram->Health > 0.f)
+								{
+									UGameplayStatics::ApplyDamage(BeamHitResult.GetActor(), BodyShotDamage, GetController(), this, UDamageType::StaticClass());
+								}
+							}
+						}
+						else if (HitVaccine) {
+							//Head Shot
+							if (BeamHitResult.BoneName.ToString() == HitVaccine->GetHeadBone())
+							{
+								if (HitVaccine->Health > 0.f)
+								{
+									UGameplayStatics::ApplyDamage(BeamHitResult.GetActor(), HeadShotDamage, GetController(), this, UDamageType::StaticClass());
+								}
+							}
+							//Body Shot
+							else
+							{
+								if (HitVaccine->Health > 0.f)
+								{
+									UGameplayStatics::ApplyDamage(BeamHitResult.GetActor(), BodyShotDamage, GetController(), this, UDamageType::StaticClass());
+								}
+							}
+
+						}
+						else if (HitOS) {
+							if (HitOS->Health > 0.f) {
+								HitOS->Health -= 10.f;
+
+							}
+							else {
+								HitOS->Die();
+							}
+						}
+						else
+						{
+							ImpactParticles = EquippedWeapon->GetImpactParticles();
+							//Spawn default particles
+							if (ImpactParticles)
+							{
+								UNiagaraComponent* EndHitInstance = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), ImpactParticles, BeamHitResult.Location);
+								EndHitInstance->Activate();
+							}
+						}
+					}
+
+					BeamParticles = EquippedWeapon->GetBeamParticles();
+					if (BeamParticles)
+					{
+						UNiagaraComponent* BeamInstance = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), BeamParticles, SocketTransform.GetLocation());
+
+						if (BeamInstance)
+						{
+							BeamInstance->SetVectorParameter(FName("LaserStart"), SocketTransform.GetLocation());
+							BeamInstance->SetVectorParameter(FName("LaserEnd"), BeamHitResult.Location);
+
+							BeamInstance->Activate();
+						}
+
 					}
 
 				}
 
 			}
-
 		}
 	}
+
+	
 
 }
 
