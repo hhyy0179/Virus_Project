@@ -545,14 +545,16 @@ void AVirusCharacter::Heal(const FInputActionValue& Value)
 	{
 		bCanUseHeal = false;
 
-		if (AnimInstance && SkillMontage)
 		const FString command = FString::Printf(TEXT("E_Cooldown"));
 		FOutputDeviceNull Ar;
 
-		UIMN->CallFunctionByNameWithArguments(*command, Ar, NULL, true);
-		 
-	
-		if (SpawnedHealPack)
+		if (UIMN) UIMN->CallFunctionByNameWithArguments(*command, Ar, NULL, true);
+		else {
+			UE_LOG(LogTemp, Warning, TEXT("There is no UIMN"));
+			return;
+		}
+		
+		if (AnimInstance && SkillMontage)
 		{
 			AnimInstance->Montage_Play(SkillMontage);
 			AnimInstance->Montage_JumpToSection("Heal");
@@ -562,7 +564,6 @@ void AVirusCharacter::Heal(const FInputActionValue& Value)
 
 		FTimerHandle TimerHandle;
 		GetWorldTimerManager().SetTimer(TimerHandle, this, &AVirusCharacter::SpawnHealPackAfterAnim, AnimPlayTime);
-
 	}
 }
 
@@ -978,14 +979,13 @@ void AVirusCharacter::BroadHacking()
 	if (bCanUseBroadHacking)
 	{
 		bCanUseBroadHacking = false;
-
-		if (AnimInstance && SkillMontage)
+		
 		const FString command = FString::Printf(TEXT("Q_Cooldown"));
 		FOutputDeviceNull Ar;
 
 		UIMN->CallFunctionByNameWithArguments(*command, Ar, NULL, true);
 
-		if (BroadHackingSocket)
+		if (AnimInstance && SkillMontage)
 		{
 			AnimInstance->Montage_Play(SkillMontage);
 			AnimInstance->Montage_JumpToSection("BroadHacking");
