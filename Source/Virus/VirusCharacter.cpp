@@ -32,6 +32,7 @@
 #include "Blueprint/WidgetBlueprintLibrary.h"
 #include "AttackItem.h"
 #include "AIOperatingSystem.h"
+#include "Misc/OutputDeviceNull.h"
 
 //////////////////////////////////////////////////////////////////////////
 // AVirusCharacter
@@ -170,6 +171,25 @@ void AVirusCharacter::BeginPlay()
 		UE_LOG(LogTemp, Warning, TEXT("Get SkillWidget"));
 	}
 	else UE_LOG(LogTemp, Warning, TEXT("There is no SkillWidget"));*/
+
+	if (UIManager) {
+		TArray<AActor*> FoundActors;
+		UGameplayStatics::GetAllActorsOfClass(GetWorld(), UIManager, FoundActors);
+		if (FoundActors.Num() > 0) {
+			UIMN = FoundActors[0];
+
+			/*const FString command = FString::Printf(TEXT("GameClear"));
+			FOutputDeviceNull Ar;
+
+			UIMN->CallFunctionByNameWithArguments(*command, Ar, NULL, true); When Die code*/
+		}
+		else {
+			UE_LOG(LogTemp, Warning, TEXT("UIMN Null"));
+		}
+	}
+	else {
+		UE_LOG(LogTemp, Warning, TEXT("UIManager Null"));
+	}
 }
 
 float AVirusCharacter::GetHP()
@@ -513,6 +533,12 @@ void AVirusCharacter::Heal(const FInputActionValue& Value)
 		bCanUseHeal = false;
 		SpawnedHealPack = SpawnHealPack();
 
+		const FString command = FString::Printf(TEXT("E_Cooldown"));
+		FOutputDeviceNull Ar;
+
+		UIMN->CallFunctionByNameWithArguments(*command, Ar, NULL, true);
+		 
+	
 		if (SpawnedHealPack)
 		{
 			FDetachmentTransformRules DetachmentTransformRules(EDetachmentRule::KeepWorld, true);
@@ -879,6 +905,11 @@ void AVirusCharacter::BroadHacking()
 	{
 		bCanUseBroadHacking = false;
 		const USkeletalMeshSocket* BroadHackingSocket = GetMesh()->GetSocketByName("BroadHacking");
+
+		const FString command = FString::Printf(TEXT("Q_Cooldown"));
+		FOutputDeviceNull Ar;
+
+		UIMN->CallFunctionByNameWithArguments(*command, Ar, NULL, true);
 
 		if (BroadHackingSocket)
 		{

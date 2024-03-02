@@ -25,8 +25,6 @@ void AAIOperatingSystem::BeginPlay()
 
 void AAIOperatingSystem::Die()
 {
-	
-		
 	GaugeManager->Percent = 100.f;
 	GaugeManager->ControlGauge(GaugeManager->Percent);
 	

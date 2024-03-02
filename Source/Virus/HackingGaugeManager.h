@@ -30,8 +30,12 @@ public:
 	int MaxCount = 600;
 	TSubclassOf<UUserWidget> HackingGauageClass;
 	UUserWidget* HackingGauageWidget;
+
+	TSubclassOf<UUserWidget> GameClearClass;
+	UUserWidget* GameClearWidget;
+
 public:
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	float Percent = 0.0f; // 퍼센트를 정수 값으로 표시
 
 	float PreviousPercent = 0.0f;

@@ -375,6 +375,10 @@ public:
 
 	FORCEINLINE bool ShouldPlayPickupSound() const { return bShouldPlayPickupSound; }
 
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="WidgetManager")
+	TSubclassOf<AActor> UIManager;
+	AActor* UIMN;
+
 private:
 	float HeadShotDamage = 1.0f;
 	float BodyShotDamage = 0.5f;
