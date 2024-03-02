@@ -10,7 +10,8 @@
 UENUM(BlueprintType)
 enum class EBroadHackingStatus : uint8
 {
-	EBHS_Hacking UMETA(DisplayName = "Hacking"),
+	EBHS_Falling UMETA(DisplayName = "Falling"),
+	EBHS_BroadHacking UMETA(DisplayName = "BroadHacking"),
 	EBHS_Finish UMETA(DisplayName = "Finish"),
 
 	EBHS_MAX UMETA(DisplayName = "DefaultMax")
@@ -39,6 +40,8 @@ protected:
 
 	void StopHacking();
 
+	void StopFalling();
+
 	void SetBroadHackingProperties(EBroadHackingStatus State);
 
 private:
@@ -51,6 +54,9 @@ private:
 	float CoolTime;
 	bool bCoolTime;
 
+	FTimerHandle ThrowItemTimer;
+	float ThrowItemTime;
+	bool bFalling;
 
 	/** Enables item tracing when overlapped */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = ItemProperties, meta = (AllowPrivateAccess = "true"))
@@ -75,6 +81,8 @@ public:
 
 	FORCEINLINE bool GetAttackOverlap() const { return bAttackOverlapped; }
 
-	FORCEINLINE UStaticMeshComponent* GetStaticMesh() const { return AttackRange; }
+	FORCEINLINE UStaticMeshComponent* GetItemMesh() const { return AttackRange; }
+
+	void ThrowAttackRange();
 
 };

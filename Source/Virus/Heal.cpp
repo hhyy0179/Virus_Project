@@ -7,7 +7,7 @@
 #include "Components/SphereComponent.h"
 
 AHeal::AHeal():
-	ThrowHealPackTime(0.7f),
+	ThrowHealPackTime(1.2f),
 	bFalling(false),
 	HealingTime(5.f),
 	bHealOverlapped(false),
@@ -81,7 +81,6 @@ void AHeal::StopFalling()
 
 void AHeal::HealAction()
 {
-	//heal 애니메이션 몽타주 넣기
 	GetWorldTimerManager().SetTimer(HealingTimer, this, &AHeal::StopHealing, HealingTime);
 }
 
@@ -167,11 +166,15 @@ void AHeal::ThrowHealPack()
 	const FVector MeshRight{ GetItemMesh()->GetRightVector() };
 
 	//Direction in which we throw the HealPack
-	FVector ImpulseDirection = MeshRight.RotateAngleAxis(160.f, MeshForward);
+	/* Legacy */
+	//FVector ImpulseDirection = MeshRight.RotateAngleAxis(90.f, MeshForward);
 
-	float RandomRotation = { 60.f };
+	/* New */
+	FVector ImpulseDirection = MeshForward.RotateAngleAxis(20.f, MeshRight);
+	
+	float RandomRotation = { 30.f };
 	ImpulseDirection = ImpulseDirection.RotateAngleAxis(RandomRotation, FVector(0.f, 0.f, 1.f));
-	ImpulseDirection *= 100.f;
+	ImpulseDirection *= 1'000.f;
 
 	//Use MeshRight to randomize
 	GetItemMesh()->AddImpulse(ImpulseDirection);

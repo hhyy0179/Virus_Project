@@ -11,7 +11,10 @@ ABroadHacking::ABroadHacking():
 	HackingTime(3.0f),
 	CoolTime(15.0f),
 	bAttackOverlapped(false),
-	BroadHackingStatus(EBroadHackingStatus::EBHS_Finish)
+	BroadHackingStatus(EBroadHackingStatus::EBHS_Falling),
+	ThrowItemTime(1.2f),
+	bFalling(false),
+	bCoolTime(false)
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -73,8 +76,7 @@ void ABroadHacking::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent,
 
 void ABroadHacking::HackingAction()
 {
-	//broadhacking 애니메이션 몽타주 넣기
-	SetBroadHackingStatus(EBroadHackingStatus::EBHS_Hacking);
+	SetBroadHackingStatus(EBroadHackingStatus::EBHS_BroadHacking);
 	GetWorldTimerManager().SetTimer(HackingTimer, this, &ABroadHacking::StopHacking, HackingTime);
 }
 
@@ -85,31 +87,54 @@ void ABroadHacking::StopHacking()
 	SetBroadHackingStatus(EBroadHackingStatus::EBHS_Finish);
 }
 
+void ABroadHacking::StopFalling()
+{
+	bFalling = false;
+	HackingAction();
+}
+
 
 void ABroadHacking::SetBroadHackingProperties(EBroadHackingStatus State)
 {
 	switch (State)
 	{
-	case EBroadHackingStatus::EBHS_Hacking:
+	case EBroadHackingStatus::EBHS_Falling:
+
+		AttackRange->SetSimulatePhysics(true);
+		AttackRange->SetEnableGravity(true);
+		AttackRange->SetVisibility(true);
+		AttackRange->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+		AttackRange->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		AttackRange->SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldStatic, ECollisionResponse::ECR_Block);
+
+		AreaSphere->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+		AreaSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	case EBroadHackingStatus::EBHS_BroadHacking:
+
+		AttackRange->SetSimulatePhysics(false);
+		AttackRange->SetEnableGravity(false);
+		AttackRange->SetVisibility(true);
+		AttackRange->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+		AttackRange->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 		//Set AreaSphere properties 
 		AreaSphere->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Overlap);
 		AreaSphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-		
-		AttackRange->SetVisibility(true);
-		AttackRange->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
-		AttackRange->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		break;
 
 	case EBroadHackingStatus::EBHS_Finish:
 
-		//Set AreaSphere properties 
-		AreaSphere->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
-		AreaSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-
+		//Set Mesh Properties
+		AttackRange->SetSimulatePhysics(false);
+		AttackRange->SetEnableGravity(false);
 		AttackRange->SetVisibility(false);
 		AttackRange->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 		AttackRange->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+		//Set AreaSphere properties 
+		AreaSphere->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+		AreaSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 		break;
 	}
@@ -122,10 +147,10 @@ void ABroadHacking::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	//Keep the item upright
-	if (GetBroadHackingStatus() == EBroadHackingStatus::EBHS_Hacking)
+	if (GetBroadHackingStatus() == EBroadHackingStatus::EBHS_BroadHacking)
 	{
-		const FRotator MeshRotation{ 0.f, GetStaticMesh()->GetComponentRotation().Yaw, 0.f };
-		GetStaticMesh()->SetWorldRotation(MeshRotation, false, nullptr, ETeleportType::TeleportPhysics);
+		const FRotator MeshRotation{ 0.f, GetItemMesh()->GetComponentRotation().Yaw, 0.f };
+		GetItemMesh()->SetWorldRotation(MeshRotation, false, nullptr, ETeleportType::TeleportPhysics);
 	}
 }
 
@@ -134,4 +159,31 @@ void ABroadHacking::SetBroadHackingStatus(EBroadHackingStatus Status)
 	BroadHackingStatus = Status;
 	SetBroadHackingProperties(BroadHackingStatus);
 }
+
+void ABroadHacking::ThrowAttackRange()
+{
+	FRotator MeshRotation{ 0.f, GetItemMesh()->GetComponentRotation().Yaw, 0.f };
+	GetItemMesh()->SetWorldRotation(MeshRotation, false, nullptr, ETeleportType::TeleportPhysics);
+	const FVector MeshForward{ GetItemMesh()->GetForwardVector() };
+	const FVector MeshRight{ GetItemMesh()->GetRightVector() };
+
+	//Direction in which we throw the HealPack
+	/* Legacy */
+	FVector ImpulseDirection = MeshRight.RotateAngleAxis(90.f, MeshForward);
+
+	/* New */
+	//FVector ImpulseDirection = MeshForward.RotateAngleAxis(20.f, MeshRight);
+
+	float RandomRotation = { 30.f };
+	ImpulseDirection = ImpulseDirection.RotateAngleAxis(RandomRotation, FVector(0.f, 0.f, 1.f));
+	ImpulseDirection *= 1'000.f;
+
+	//Use MeshRight to randomize
+	GetItemMesh()->AddImpulse(ImpulseDirection);
+
+	//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Yellow, GetItemMesh()->GetName());
+	bFalling = true;
+	GetWorldTimerManager().SetTimer(ThrowItemTimer, this, &ABroadHacking::StopFalling, ThrowItemTime);
+}
+
 

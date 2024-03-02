@@ -11,6 +11,17 @@
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FEquipItemDelegate, int32, CurrentSlotIndex, int32, NewSlotIndex);
 
+UENUM(BlueprintType)
+enum class ECombatState : uint8
+{
+	ECS_Unequipped UMETA(DisplayName = "Unequipped"),
+	ECS_Reloading UMETA(DisplayName = "Reloading"),
+	ECS_Equipping UMETA(DisplayName = "Equipping"),
+	ECS_Stunned UMETA(DisplayName = "Stunned"),
+
+	ECS_MAX UMETA(DisplayName = "DefaultMAX")
+};
+
 UCLASS(config = Game)
 class AVirusCharacter : public ACharacter
 {
@@ -121,7 +132,7 @@ class AVirusCharacter : public ACharacter
 
 	/** Montage for healing action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Skill, meta = (AllowPrivateAccess = "true"))
-	UAnimMontage* HealingMontage;
+	UAnimMontage* SkillMontage;
 
 	/** MinimapArm positioning the camera upon the character */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Minimap, meta = (AllowPrivateAccess = "true"))
@@ -211,7 +222,6 @@ class AVirusCharacter : public ACharacter
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Inventory, meta = (AllowPrivateAccess = "true"))
 	TMap<FString, int32> TempInventory;
 
-
 	/** Delegate for sending slot information to InventoryBar when equipping */
 	UPROPERTY(BlueprintAssignable, Category = Delegates, meta = (AllowPrivateAccess = "true"))
 	FEquipItemDelegate EquipItemDelegate;
@@ -229,7 +239,6 @@ class AVirusCharacter : public ACharacter
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
 	TSubclassOf<class ABroadHacking> DefaultBroadHackingClass;
 
-	
 	FTimerHandle HealCoolTimer;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Skill, meta = (AllowPrivateAccess = "true"))
@@ -252,6 +261,13 @@ class AVirusCharacter : public ACharacter
 	/** Set this in Blurprints for the default AttackItem class */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
 	TSubclassOf<class AAttackItem> AttackItemClass;
+
+	/** Set this in Blurprints for the default AttackItem class */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
+	TSubclassOf<class AActor> DefenseItemClass;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Cambat, meta = (AllowPrivateAccess = "true"))
+	ECombatState CombatState;
 
 protected:
 
@@ -315,8 +331,6 @@ protected:
 
 	void PlayReloadMontage();
 
-	void OnReloadMontageEnded();
-
 	void UseItem(EItemType Type, AItem* Item);
 
 	/** Spawns a HealPack */
@@ -332,6 +346,10 @@ protected:
 	void CanUseBroadHacking();
 
 	void FinishOverClock();
+
+	void SpawnHealPackAfterAnim();
+
+	void SpawnBroadHackingAfterAnim();
 
 public:
 	AVirusCharacter();
@@ -375,6 +393,7 @@ public:
 
 	FORCEINLINE bool ShouldPlayPickupSound() const { return bShouldPlayPickupSound; }
 
+	FORCEINLINE ECombatState GetCombatState() const { return CombatState; }
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="WidgetManager")
 	TSubclassOf<AActor> UIManager;
 	AActor* UIMN;
