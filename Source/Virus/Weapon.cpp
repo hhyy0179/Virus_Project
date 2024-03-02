@@ -98,14 +98,13 @@ void AWeapon::SetWeapongageProperties(EWeapongageStatus State, float DeltaTime)
 
 	case EWeapongageStatus::EWS_Reloading:
 
-		if (GageAmount <= MaxGageAmount)
+		if (GageAmount < MaxGageAmount)
 		{
 			GageAmount += DeltaGage * 5;
 		}
 		else
 		{
 			GageAmount = MaxGageAmount;
-			SetWeapongageStatus(EWeapongageStatus::EWS_Normal);
 		}
 		break;
 	}

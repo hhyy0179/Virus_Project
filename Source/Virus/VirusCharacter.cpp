@@ -66,9 +66,7 @@ AVirusCharacter::AVirusCharacter() :
 	HealCoolTime(5.f),
 	BroadHackinglCoolTime(5.f),
 	bCanUseBroadHacking(true),
-	CombatState(ECombatState::ECS_Unequipped),
-
-	StunChance(.25f)
+	CombatState(ECombatState::ECS_Normal)
 {
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
@@ -202,8 +200,7 @@ float AVirusCharacter::GetHP()
 
 void AVirusCharacter::EndStun()
 {
-	CombatState = ECombatState::ECS_Equipping;
-
+	CombatState = ECombatState::ECS_Normal;
 }
 
 float AVirusCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
@@ -346,144 +343,150 @@ void AVirusCharacter::AttackWeapon(float DeltaTime)
 	if (!bisScanning) return;
 	if (EquippedWeapon == nullptr) return;
 
-	if (CheckReloading())
-	{
-		PlayReloadMontage();
-	}
 
-	if (WeaponHasGage() && (!CheckReloading()))
+	if (CombatState == ECombatState::ECS_Normal)
 	{
-		if (Controller != nullptr && FireSound)
+		if (CheckReloading())
 		{
-			//UE_LOG(LogTemp, Warning, TEXT("Attack"));
-
-			UGameplayStatics::PlaySound2D(this, FireSound);
-			if (AnimInstance && ScaningMontage)
-			{
-				AnimInstance->Montage_Play(ScaningMontage);
-				AnimInstance->Montage_JumpToSection(FName("Attack"));
-			}
+			CombatState = ECombatState::ECS_Reloading;
+			PlayReloadMontage();
 		}
 
-		EquippedWeapon->SetWeapongageStatus(EWeapongageStatus::EWS_Normal);
-
-		/* Legacy */
-		//const USkeletalMeshSocket* BarrelSocket = GetMesh()->GetSocketByName("BarrelSocket");
-
-		/* New */
-		const USkeletalMeshSocket* BarrelSocket = EquippedWeapon->GetItemMesh()->GetSocketByName("BarrelSocket");
-
-		if (BarrelSocket)
+		if (WeaponHasGage())
 		{
-		
-			//FTransform SocketTransform = BarrelSocket->GetSocketTransform(GetMesh(), ERelativeTransformSpace::RTS_World);
-			FTransform SocketTransform = EquippedWeapon->GetItemMesh()->GetSocketTransform(FName("BarrelSocket"), ERelativeTransformSpace::RTS_World);
-
-			LaserFlash = EquippedWeapon->GetLaserFlash();
-
-			//Spawn LaserFlash
-			if (LaserFlash)
+			if (Controller != nullptr && FireSound)
 			{
-				UNiagaraComponent* FlashInstance = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), LaserFlash, SocketTransform.GetLocation());
-				
-				FlashInstance->Activate();
+				//UE_LOG(LogTemp, Warning, TEXT("Attack"));
+
+				UGameplayStatics::PlaySound2D(this, FireSound);
+				if (AnimInstance && ScaningMontage)
+				{
+					AnimInstance->Montage_Play(ScaningMontage);
+					AnimInstance->Montage_JumpToSection(FName("Attack"));
+				}
 			}
 
-			FHitResult BeamHitResult;
-			bool bBeamEnd = GetBeamEndLocation(SocketTransform.GetLocation(), BeamHitResult);
-			if (bBeamEnd)
+			/* Legacy */
+			//const USkeletalMeshSocket* BarrelSocket = GetMesh()->GetSocketByName("BarrelSocket");
+
+			/* New */
+			const USkeletalMeshSocket* BarrelSocket = EquippedWeapon->GetItemMesh()->GetSocketByName("BarrelSocket");
+
+			if (BarrelSocket)
 			{
-				// Does hit Actor implement BulletHitInterface?
-				if (BeamHitResult.GetActor())
+
+				//FTransform SocketTransform = BarrelSocket->GetSocketTransform(GetMesh(), ERelativeTransformSpace::RTS_World);
+				FTransform SocketTransform = EquippedWeapon->GetItemMesh()->GetSocketTransform(FName("BarrelSocket"), ERelativeTransformSpace::RTS_World);
+
+				LaserFlash = EquippedWeapon->GetLaserFlash();
+
+				//Spawn LaserFlash
+				if (LaserFlash)
 				{
-					IBulletHitInterface* BulletHitInterface = Cast<IBulletHitInterface>(BeamHitResult.GetActor());
-					if (BulletHitInterface)
-					{
-						BulletHitInterface->BulletHit_Implementation(BeamHitResult);
-					}
+					UNiagaraComponent* FlashInstance = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), LaserFlash, SocketTransform.GetLocation());
 
-					AAIProgramCharacter* HitProgram = Cast<AAIProgramCharacter>(BeamHitResult.GetActor());
-					AAIVaccineCharacter2* HitVaccine = Cast<AAIVaccineCharacter2>(BeamHitResult.GetActor());
-					AAIOperatingSystem* HitOS = Cast<AAIOperatingSystem>(BeamHitResult.GetActor());
-
-					if (HitProgram)
-					{
-						//Head Shot
-						if (BeamHitResult.BoneName.ToString() == HitProgram->GetHeadBone())
-						{
-							if (HitProgram->Health > 0.f)
-							{
-								UGameplayStatics::ApplyDamage(BeamHitResult.GetActor(), HeadShotDamage, GetController(), this, UDamageType::StaticClass());
-							}
-						}
-						//Body Shot
-						else
-						{
-							if (HitProgram->Health > 0.f)
-							{
-								UGameplayStatics::ApplyDamage(BeamHitResult.GetActor(), BodyShotDamage, GetController(), this, UDamageType::StaticClass());
-							}
-						}
-					}
-					else if (HitVaccine) {
-						//Head Shot
-						if (BeamHitResult.BoneName.ToString() == HitVaccine->GetHeadBone())
-						{
-							if (HitVaccine->Health > 0.f)
-							{
-								UGameplayStatics::ApplyDamage(BeamHitResult.GetActor(), HeadShotDamage, GetController(), this, UDamageType::StaticClass());
-							}
-						}
-						//Body Shot
-						else
-						{
-							if (HitVaccine->Health > 0.f)
-							{
-								UGameplayStatics::ApplyDamage(BeamHitResult.GetActor(), BodyShotDamage, GetController(), this, UDamageType::StaticClass());
-							}
-						}
-
-					}
-					else if (HitOS) {
-						if (HitOS->Health > 0.f) {
-							HitOS->Health -= 10.f;
-							
-						}
-						else {
-							HitOS->Die();
-						}
-					}
-					else
-					{
-						ImpactParticles = EquippedWeapon->GetImpactParticles();
-						//Spawn default particles
-						if (ImpactParticles)
-						{
-							UNiagaraComponent* EndHitInstance = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), ImpactParticles, BeamHitResult.Location);
-							EndHitInstance->Activate();
-						}
-					}
+					FlashInstance->Activate();
 				}
 
-				BeamParticles = EquippedWeapon->GetBeamParticles();
-				if (BeamParticles)
+				FHitResult BeamHitResult;
+				bool bBeamEnd = GetBeamEndLocation(SocketTransform.GetLocation(), BeamHitResult);
+				if (bBeamEnd)
 				{
-					UNiagaraComponent* BeamInstance = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), BeamParticles, SocketTransform.GetLocation());
-
-					if (BeamInstance)
+					// Does hit Actor implement BulletHitInterface?
+					if (BeamHitResult.GetActor())
 					{
-						BeamInstance->SetVectorParameter(FName("LaserStart"), SocketTransform.GetLocation());
-						BeamInstance->SetVectorParameter(FName("LaserEnd"), BeamHitResult.Location);
+						IBulletHitInterface* BulletHitInterface = Cast<IBulletHitInterface>(BeamHitResult.GetActor());
+						if (BulletHitInterface)
+						{
+							BulletHitInterface->BulletHit_Implementation(BeamHitResult);
+						}
 
-						BeamInstance->Activate();
+						AAIProgramCharacter* HitProgram = Cast<AAIProgramCharacter>(BeamHitResult.GetActor());
+						AAIVaccineCharacter2* HitVaccine = Cast<AAIVaccineCharacter2>(BeamHitResult.GetActor());
+						AAIOperatingSystem* HitOS = Cast<AAIOperatingSystem>(BeamHitResult.GetActor());
+
+						if (HitProgram)
+						{
+							//Head Shot
+							if (BeamHitResult.BoneName.ToString() == HitProgram->GetHeadBone())
+							{
+								if (HitProgram->Health > 0.f)
+								{
+									UGameplayStatics::ApplyDamage(BeamHitResult.GetActor(), HeadShotDamage, GetController(), this, UDamageType::StaticClass());
+								}
+							}
+							//Body Shot
+							else
+							{
+								if (HitProgram->Health > 0.f)
+								{
+									UGameplayStatics::ApplyDamage(BeamHitResult.GetActor(), BodyShotDamage, GetController(), this, UDamageType::StaticClass());
+								}
+							}
+						}
+						else if (HitVaccine) {
+							//Head Shot
+							if (BeamHitResult.BoneName.ToString() == HitVaccine->GetHeadBone())
+							{
+								if (HitVaccine->Health > 0.f)
+								{
+									UGameplayStatics::ApplyDamage(BeamHitResult.GetActor(), HeadShotDamage, GetController(), this, UDamageType::StaticClass());
+								}
+							}
+							//Body Shot
+							else
+							{
+								if (HitVaccine->Health > 0.f)
+								{
+									UGameplayStatics::ApplyDamage(BeamHitResult.GetActor(), BodyShotDamage, GetController(), this, UDamageType::StaticClass());
+								}
+							}
+
+						}
+						else if (HitOS) {
+							if (HitOS->Health > 0.f) {
+								HitOS->Health -= 10.f;
+
+							}
+							else {
+								HitOS->Die();
+							}
+						}
+						else
+						{
+							ImpactParticles = EquippedWeapon->GetImpactParticles();
+							//Spawn default particles
+							if (ImpactParticles)
+							{
+								UNiagaraComponent* EndHitInstance = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), ImpactParticles, BeamHitResult.Location);
+								EndHitInstance->Activate();
+							}
+						}
+					}
+
+					BeamParticles = EquippedWeapon->GetBeamParticles();
+					if (BeamParticles)
+					{
+						UNiagaraComponent* BeamInstance = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), BeamParticles, SocketTransform.GetLocation());
+
+						if (BeamInstance)
+						{
+							BeamInstance->SetVectorParameter(FName("LaserStart"), SocketTransform.GetLocation());
+							BeamInstance->SetVectorParameter(FName("LaserEnd"), BeamHitResult.Location);
+
+							BeamInstance->Activate();
+						}
+
 					}
 
 				}
 
 			}
-
 		}
 	}
+
+	
+
 }
 
 void AVirusCharacter::Scan(const FInputActionValue& Value)
@@ -585,7 +588,7 @@ void AVirusCharacter::StopSelect(const FInputActionValue& Value)
 void AVirusCharacter::Aiming(const FInputActionValue& Value)
 {
 	
-	if (CombatState != ECombatState::ECS_Reloading && CombatState != ECombatState::ECS_Equipping && CombatState != ECombatState::ECS_Stunned)
+	if (CombatState != ECombatState::ECS_Reloading && CombatState != ECombatState::ECS_Stunned)
 	{
 		bAiming = true;
 	}
@@ -606,14 +609,17 @@ void AVirusCharacter::Reload(const FInputActionValue& Value)
 		return;
 	}
 
-	CombatState = ECombatState::ECS_Reloading;
-	bReloading = true;
-
-	if (!CheckReloading())
+	if (CombatState == ECombatState::ECS_Normal)
 	{
-		EquippedWeapon->SetWeapongageStatus(EWeapongageStatus::EWS_Reloading);
-		PlayReloadMontage();
+		CombatState = ECombatState::ECS_Reloading;
+
+		if (!CheckReloading())
+		{
+			EquippedWeapon->SetWeapongageStatus(EWeapongageStatus::EWS_Reloading);
+			PlayReloadMontage();
+		}
 	}
+	
 }
 
 void AVirusCharacter::GetInventory(const FInputActionValue& Value)
@@ -774,7 +780,7 @@ void AVirusCharacter::EquipWeapon(AWeapon* WeaponToEquip)
 		{
 			//Attach the Weapon the hand socket RightHandSocket
 			HandSocket->AttachActor(WeaponToEquip, GetMesh());
-			CombatState = ECombatState::ECS_Equipping;
+			CombatState = ECombatState::ECS_Normal;
 		}
 		EquippedWeapon = WeaponToEquip;
 		EquippedWeapon->SetItemState(EItemState::EIS_Equipped);
@@ -1173,6 +1179,11 @@ void AVirusCharacter::Stun()
 	FTimerHandle DelayAnim;
 	GetWorldTimerManager().SetTimer(DelayAnim, this, &AVirusCharacter::PlayStunMontage, 0.6f);
 
+}
 
+void AVirusCharacter::EndReload()
+{
+	CombatState = ECombatState::ECS_Normal;
+	EquippedWeapon->SetWeapongageStatus(EWeapongageStatus::EWS_Normal);
 }
 

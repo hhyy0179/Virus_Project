@@ -14,9 +14,8 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FEquipItemDelegate, int32, CurrentS
 UENUM(BlueprintType)
 enum class ECombatState : uint8
 {
-	ECS_Unequipped UMETA(DisplayName = "Unequipped"),
+	ECS_Normal UMETA(DisplayName = "Normal"),
 	ECS_Reloading UMETA(DisplayName = "Reloading"),
-	ECS_Equipping UMETA(DisplayName = "Equipping"),
 	ECS_Stunned UMETA(DisplayName = "Stunned"),
 
 	ECS_MAX UMETA(DisplayName = "DefaultMAX")
@@ -228,8 +227,6 @@ class AVirusCharacter : public ACharacter
 	UPROPERTY(BlueprintAssignable, Category = Delegates, meta = (AllowPrivateAccess = "true"))
 	FEquipItemDelegate EquipItemDelegate;
 
-	bool bReloading;
-
 	/** Set this in Blurprints for the default heal class */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
 	TSubclassOf<class AHeal> HealClass;
@@ -418,6 +415,9 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void Stun();
+
+	UFUNCTION(BlueprintCallable)
+	void EndReload();
 
 	FORCEINLINE float GetStunChance() const { return StunChance; }
 
