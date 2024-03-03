@@ -39,6 +39,6 @@ public:
 	float Percent = 0.0f; // 퍼센트를 정수 값으로 표시
 
 	float PreviousPercent = 0.0f;
-	float FixedPercent[6] = { 0.0f, 0.1f, 0.25f, 0.5f, 0.7f, 0.8f };
+	float FixedPercent[6] = { 0.0f, 0.15f, 0.25f, 0.5f, 0.7f, 0.8f };
 	int CurrentPercentIndex = 0;
 };
