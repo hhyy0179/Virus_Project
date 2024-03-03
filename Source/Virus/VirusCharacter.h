@@ -21,6 +21,16 @@ enum class ECombatState : uint8
 	ECS_MAX UMETA(DisplayName = "DefaultMAX")
 };
 
+UENUM(BlueprintType)
+enum class EDefenseStatus : uint8
+{
+	EDS_Activate UMETA(DisplayName = "Activate"),
+	EDS_DeActivate UMETA(DisplayName = "DeActivate"),
+
+	EDS_MAX UMETA(DisplayName = "DefaultMax")
+};
+
+
 UCLASS(config = Game)
 class AVirusCharacter : public ACharacter
 {
@@ -35,6 +45,12 @@ class AVirusCharacter : public ACharacter
 	/** Follow camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* FollowCamera;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Skill, meta = (AllowPrivateAccess = "true"))
+	class USphereComponent* DefenseArea;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Skill, meta = (AllowPrivateAccess = "true"))
+	class UStaticMeshComponent* DefenseSphere;
 
 	/** Look Rate while not Aiming */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Camera, meta = (AllowPrivateAccess = "true"), meta = (ClampMin = "0.0", ClampMax = "1.0", UIMin = "0.0", UIMax = "1.0"))
@@ -129,7 +145,7 @@ class AVirusCharacter : public ACharacter
 
 	/** Flash spawned at BarrelSocket */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Skill, meta = (AllowPrivateAccess = "true"))
-	class UParticleSystem* HealingVFX;
+	class UParticleSystem* BroadHackingVFX;
 
 	/** Montage for healing action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Skill, meta = (AllowPrivateAccess = "true"))
@@ -276,6 +292,22 @@ class AVirusCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
 	float StunChance;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
+	class UAnimMontage* DeathMontage;
+
+	/** State of the item */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Skill, meta = (AllowPrivateAccess = "true"))
+	EDefenseStatus DefenseStatus;
+
+	FTimerHandle AttackDefenseItemTimer;
+	FTimerHandle CCTVDefenseItemTimer;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Skill, meta = (AllowPrivateAccess = "true"))
+	bool bAttackDefense;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Skill, meta = (AllowPrivateAccess = "true"))
+	bool bCCTVDefense;
+
 protected:
 
 	/** Called for movement input */
@@ -360,6 +392,14 @@ protected:
 
 	void PlayStunMontage();
 
+	void Die();
+
+	void SetDefenseProperties(EDefenseStatus State);
+
+	void FinishAttackDefense();
+	
+	void FinishCCTVDefense();
+
 public:
 	AVirusCharacter();
 
@@ -421,6 +461,10 @@ public:
 
 	FORCEINLINE float GetStunChance() const { return StunChance; }
 
+	UFUNCTION(BlueprintCallable)
+	void FinishDeath();
+
+	void SetDefenseStatus(EDefenseStatus Status);
 private:
 	float HeadShotDamage = 1.0f;
 	float BodyShotDamage = 0.5f;

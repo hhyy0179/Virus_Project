@@ -17,6 +17,7 @@
 #include "HackingGaugeManager.h"
 #include "Engine/World.h"
 #include "AIAllyCharacter.h"
+#include "Item.h"
 
 // Sets default values
 AAIVaccineCharacter2::AAIVaccineCharacter2():

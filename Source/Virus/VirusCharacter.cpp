@@ -33,6 +33,7 @@
 #include "AttackItem.h"
 #include "AIOperatingSystem.h"
 #include "Misc/OutputDeviceNull.h"
+#include "Particles/ParticleSystemComponent.h"
 
 //////////////////////////////////////////////////////////////////////////
 // AVirusCharacter
@@ -66,7 +67,9 @@ AVirusCharacter::AVirusCharacter() :
 	HealCoolTime(5.f),
 	BroadHackinglCoolTime(5.f),
 	bCanUseBroadHacking(true),
-	CombatState(ECombatState::ECS_Normal)
+	CombatState(ECombatState::ECS_Normal),
+	DefenseStatus(EDefenseStatus::EDS_DeActivate),
+	bAttackDefense(false)
 {
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
@@ -118,6 +121,13 @@ AVirusCharacter::AVirusCharacter() :
 	MinimapCapture->ProjectionType = ECameraProjectionMode::Orthographic;
 	MinimapCapture->OrthoWidth = 3000.0f;
 
+	DefenseArea = CreateDefaultSubobject<USphereComponent>(TEXT("DefenseArea"));
+	DefenseArea->SetupAttachment(GetMesh());
+
+	DefenseSphere = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("DefenseSphere"));
+	DefenseSphere->SetupAttachment(DefenseArea);
+
+
 	/*static ConstructorHelpers::FClassFinder<UUserWidget> SkillAsset(TEXT("/Game/_VirusGame/HUD/BP_SkillWidget.BP_SkillWidget_C"));
 	
 	if (SkillAsset.Succeeded()) {
@@ -163,6 +173,8 @@ void AVirusCharacter::BeginPlay()
 	HipLookRate = 0.3f * VirusInstance->MouseSensitivity;
 	AimingLookRate = 0.1f * VirusInstance->MouseSensitivity;
 
+	SetDefenseProperties(DefenseStatus);
+
 	/*TArray<UUserWidget*> FindSkillWidget;
 
 	UWidgetBlueprintLibrary::GetAllWidgetsOfClass(GetWorld(), FindSkillWidget, SkillClass);
@@ -201,20 +213,37 @@ float AVirusCharacter::GetHP()
 void AVirusCharacter::EndStun()
 {
 	CombatState = ECombatState::ECS_Normal;
+	GetCharacterMovement()->MaxWalkSpeed = 300.f;
 }
 
 float AVirusCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
+
 	if (CurrentHP - DamageAmount <= 0.f)
 	{
 		CurrentHP = 0.f;
+		Die();
+		/*
+		auto VaccineController = Cast<AAIController>(EventInstigator);
+		if (VaccineController)
+		{
+			if (VaccineController->GetBlackboardComponent())
+			{
+				GEngine->AddOnScreenDebugMessage(11, 3.0f, FColor::Magenta, FString::Printf(TEXT("Vaccine")));
+				VaccineController->GetBlackboardComponent()->SetValueAsBool(FName(TEXT("CharacterDead")), true);
+			}
+			
+		}
+		*/
+		
+
 	}
 	else
 	{
 		CurrentHP -= DamageAmount;
 	}
-	return DamageAmount;
 
+	return DamageAmount;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -485,8 +514,6 @@ void AVirusCharacter::AttackWeapon(float DeltaTime)
 		}
 	}
 
-	
-
 }
 
 void AVirusCharacter::Scan(const FInputActionValue& Value)
@@ -671,7 +698,6 @@ void AVirusCharacter::CalculateCrosshairSpread(float DeltaTime)
 
 bool AVirusCharacter::TraceUnderCrosshairs(FHitResult& OutHitResult, FVector& OutHitLocation)
 {
-
 	//Get Viewport Size
 	FVector2D ViewportSize;
 
@@ -835,83 +861,63 @@ void AVirusCharacter::UseItem(EItemType Type, AItem* Item)
 {
 	switch (Type)
 	{
-	case EItemType::EIT_AttackItem:
-
-		if (AttackItemClass)
+		case EItemType::EIT_AttackItem:
 		{
-			//Spawn the HealPack at Character Socket position
-
-			const USkeletalMeshSocket* ItemSocket = GetMesh()->GetSocketByName("Heal");
-
-			if (ItemSocket)
+			if (AttackItemClass)
 			{
-				FTransform ItemSocketTransform = ItemSocket->GetSocketTransform(GetMesh());
-				AAttackItem* AttackItem = GetWorld()->SpawnActor<AAttackItem>(AttackItemClass, ItemSocketTransform);
+				//Spawn the HealPack at Character Socket position
 
-				if (AttackItem)
+				const USkeletalMeshSocket* ItemSocket = GetMesh()->GetSocketByName("Heal");
+
+				if (ItemSocket)
 				{
-					FDetachmentTransformRules DetachmentTransformRules(EDetachmentRule::KeepWorld, true);
-					AttackItem->GetItemMesh()->DetachFromComponent(DetachmentTransformRules);
+					FTransform ItemSocketTransform = ItemSocket->GetSocketTransform(GetMesh());
+					AAttackItem* AttackItem = GetWorld()->SpawnActor<AAttackItem>(AttackItemClass, ItemSocketTransform);
 
-					AttackItem->SetAttackItemStatus(EAttackItemStatus::EAIS_Falling);
-					AttackItem->ThrowItem();
-				}
-			}
+					if (AttackItem)
+					{
+						FDetachmentTransformRules DetachmentTransformRules(EDetachmentRule::KeepWorld, true);
+						AttackItem->GetItemMesh()->DetachFromComponent(DetachmentTransformRules);
 
-		}
-
-		break;
-
-	case EItemType::EIT_AttackDefenseItem:
-
-		if (DefenseItemClass)
-		{
-			//Spawn the HealPack at Character Socket position
-
-			const USkeletalMeshSocket* ItemSocket = GetMesh()->GetSocketByName("Heal");
-
-			if (ItemSocket)
-			{
-				FTransform ItemSocketTransform = ItemSocket->GetSocketTransform(GetMesh());
-				AActor* DefenseItem = GetWorld()->SpawnActor<AActor>(DefenseItemClass, ItemSocketTransform);
-
-
-				if (DefenseItem)
-				{
-					UStaticMeshComponent* StaticMesh = Cast<UStaticMeshComponent>(DefenseItem->GetDefaultAttachComponent());
-					StaticMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Overlap);
-					//StaticMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Block);
-					StaticMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-
-					ItemSocket->AttachActor(DefenseItem, GetMesh());
-
+						AttackItem->SetAttackItemStatus(EAttackItemStatus::EAIS_Falling);
+						AttackItem->ThrowItem();
+					}
 				}
 
 			}
 
-			/*
-			if (DefenseItem)
-			{
-				FDetachmentTransformRules DetachmentTransformRules(EDetachmentRule::KeepWorld, true);
-				DefenseItem->GetRootComponent()->DetachFromComponent(DetachmentTransformRules);
-				
-			}
-			*/
-
+			break;
 		}
 
-		break;
+		case EItemType::EIT_AttackDefenseItem:
+		{
+			SetDefenseStatus(EDefenseStatus::EDS_Activate);
+			float AttackDefenseTime = Item->GetItemDuration();
+			
+			bAttackDefense = true;
+			GetWorldTimerManager().SetTimer(AttackDefenseItemTimer, this, &AVirusCharacter::FinishAttackDefense, AttackDefenseTime);
 
-	case EItemType::EIT_CCTVDefenseItem:
+			break;
+		}
+		case EItemType::EIT_CCTVDefenseItem:
+		{
+			SetDefenseStatus(EDefenseStatus::EDS_Activate);
+			float CCTVDefenseTime = Item->GetItemDuration();
 
-		break;
+			bCCTVDefense = true;
+			GetWorldTimerManager().SetTimer(CCTVDefenseItemTimer, this, &AVirusCharacter::FinishCCTVDefense, CCTVDefenseTime);
 
-
-	case EItemType::EIT_SpeedItem:
-		GetCharacterMovement()->MaxWalkSpeed *= 3.0f;
-		float OverClockTime = Item->GetItemDuration();
-		GetWorldTimerManager().SetTimer(OverClockTimer, this, &AVirusCharacter::FinishOverClock, OverClockTime);
-		break;
+			break;
+		}
+		
+		case EItemType::EIT_SpeedItem:
+		{
+			GetCharacterMovement()->MaxWalkSpeed *= 3.0f;
+			float OverClockTime = Item->GetItemDuration();
+			GetWorldTimerManager().SetTimer(OverClockTimer, this, &AVirusCharacter::FinishOverClock, OverClockTime);
+			break;
+		}
+		
 	}
 }
 
@@ -953,7 +959,6 @@ void AVirusCharacter::SpawnBroadHackingAfterAnim()
 			GetWorldTimerManager().SetTimer(BroadHackingCoolTimer, this, &AVirusCharacter::CanUseBroadHacking, BroadHackinglCoolTime);
 		}
 
-		
 	}
 }
 
@@ -996,20 +1001,13 @@ void AVirusCharacter::BroadHacking()
 			AnimInstance->Montage_Play(SkillMontage);
 			AnimInstance->Montage_JumpToSection("BroadHacking");
 		}
-
-		const USkeletalMeshSocket* HealVFXSocket = GetMesh()->GetSocketByName("Heal");
-
-		if (HealVFXSocket)
+		
+		if (BroadHackingVFX)
 		{
-			const FTransform HealVFXSocketTransform = HealVFXSocket->GetSocketTransform(GetMesh());
-
-			if (HealingVFX)
-			{
-				UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), HealingVFX, HealVFXSocketTransform);
-			}
+			UGameplayStatics::SpawnEmitterAttached(BroadHackingVFX, GetCapsuleComponent(),NAME_None,GetCapsuleComponent()->GetRelativeLocation(),FRotator::ZeroRotator,EAttachLocation::KeepWorldPosition);
 		}
-
-
+		
+		
 		float AnimPlayTime = 0.7f;
 
 		FTimerHandle TimerHandle;
@@ -1067,6 +1065,7 @@ void AVirusCharacter::Tick(float DeltaTime)
 
 	HealPackOverlap(DeltaTime);
 
+	
 	/* Set Equipped Weapon Relative World Scale default */
 	if (GEngine && EquippedWeapon)
 	{
@@ -1083,7 +1082,58 @@ void AVirusCharacter::PlayStunMontage()
 	if (AnimInstance && HitReactMontage)
 	{
 		AnimInstance->Montage_Play(HitReactMontage);
+		GetCharacterMovement()->MaxWalkSpeed = 100.f;
 	}
+}
+
+void AVirusCharacter::Die()
+{
+	if (AnimInstance && DeathMontage)
+	{
+		AnimInstance->Montage_Play(DeathMontage);
+		AnimInstance->Montage_JumpToSection("Death");
+	}
+
+}
+
+void AVirusCharacter::SetDefenseProperties(EDefenseStatus State)
+{
+	switch (State)
+	{
+	case EDefenseStatus::EDS_Activate:
+
+		DefenseArea->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Overlap);
+		DefenseArea->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+
+		DefenseSphere->SetVisibility(true);
+		DefenseSphere->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Block);
+		DefenseSphere->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+
+		break;
+
+	case EDefenseStatus::EDS_DeActivate:
+	
+		DefenseArea->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+		DefenseArea->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		
+		DefenseSphere->SetVisibility(false);
+		DefenseSphere->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+		DefenseSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+		break;
+	}
+}
+
+void AVirusCharacter::FinishAttackDefense()
+{
+	SetDefenseStatus(EDefenseStatus::EDS_DeActivate);
+	bAttackDefense = false;
+}
+
+void AVirusCharacter::FinishCCTVDefense()
+{
+	SetDefenseStatus(EDefenseStatus::EDS_DeActivate);
+	bCCTVDefense = false;
 }
 
 float AVirusCharacter::GetCrosshairSpreadMultiplier() const
@@ -1174,10 +1224,11 @@ void AVirusCharacter::GetPickUpItem(AItem* Item)
 
 void AVirusCharacter::Stun()
 {
+	//if (CurrentHP <= 0.f) return;
 	CombatState = ECombatState::ECS_Stunned;
-	
-	FTimerHandle DelayAnim;
-	GetWorldTimerManager().SetTimer(DelayAnim, this, &AVirusCharacter::PlayStunMontage, 0.6f);
+	PlayStunMontage();
+	//FTimerHandle DelayAnim;
+	//GetWorldTimerManager().SetTimer(DelayAnim, this, &AVirusCharacter::PlayStunMontage, 0.6f);
 
 }
 
@@ -1185,5 +1236,21 @@ void AVirusCharacter::EndReload()
 {
 	CombatState = ECombatState::ECS_Normal;
 	EquippedWeapon->SetWeapongageStatus(EWeapongageStatus::EWS_Normal);
+}
+
+void AVirusCharacter::FinishDeath()
+{
+	GetMesh()->bPauseAnims = true;
+	APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
+	if (PC)
+	{
+		DisableInput(PC);
+	}
+}
+
+void AVirusCharacter::SetDefenseStatus(EDefenseStatus Status)
+{
+	DefenseStatus = Status;
+	SetDefenseProperties(DefenseStatus);
 }
 
