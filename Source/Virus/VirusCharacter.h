@@ -97,10 +97,6 @@ class AVirusCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* BroadHackingAction;
 
-	/** Scan Shot Sound cue*/
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input, meta = (AllowPrivateAccess = "true"))
-	class USoundCue* FireSound;
-
 	/** Flash spawned at BarrelSocket */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
 	class UNiagaraSystem* LaserFlash;
@@ -118,6 +114,7 @@ class AVirusCharacter : public ACharacter
 	TSubclassOf<UUserWidget> SkillClass;
 	UUserWidget* SkillWidget;
 
+	bool bLowAlarmShow = false;
 	/** True when aiming*/
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
 	bool bAiming;
@@ -501,5 +498,47 @@ private:
 	float HeadShotDamage = 1.0f;
 	float BodyShotDamage = 0.5f;
 
+public:
+	/** Sound cue*/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Sound, meta = (AllowPrivateAccess = "true"))
+	class USoundCue* FireSound;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Sound, meta = (AllowPrivateAccess = "true"))
+	class USoundCue* HitSound;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Sound, meta = (AllowPrivateAccess = "true"))
+	class USoundCue* AttackDefenseSound;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Sound, meta = (AllowPrivateAccess = "true"))
+	class USoundCue* HealSound;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Sound, meta = (AllowPrivateAccess = "true"))
+	class USoundCue* BroadHackingSound;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Sound, meta = (AllowPrivateAccess = "true"))
+	class USoundCue* MineSetSound;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Sound, meta = (AllowPrivateAccess = "true"))
+	class USoundCue* MineExplodeSound;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Sound, meta = (AllowPrivateAccess = "true"))
+	class USoundCue* FireToOSSound;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Sound, meta = (AllowPrivateAccess = "true"))
+	class USoundCue* WalkingSound;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Sound, meta = (AllowPrivateAccess = "true"))
+	class USoundCue* RunningSound;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Sound, meta = (AllowPrivateAccess = "true"))
+	class USoundCue* ReloadSound;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Sound, meta = (AllowPrivateAccess = "true"))
+	class USoundCue* GetItemSound;
+
+	bool bFireSoundPlaying = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Bool, meta = (AllowPrivateAccess = "true"))
+	bool bInRealWorld = false;
 };
 

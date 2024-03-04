@@ -391,7 +391,13 @@ void AVirusCharacter::AttackWeapon(float DeltaTime)
 			{
 				//UE_LOG(LogTemp, Warning, TEXT("Attack"));
 
-				UGameplayStatics::PlaySound2D(this, FireSound);
+				if (bInRealWorld) {
+					const FString command = FString::Printf(TEXT("FireSoundPlay"));
+					FOutputDeviceNull Ar;
+
+					CallFunctionByNameWithArguments(*command, Ar, NULL, true);
+				}
+
 				if (AnimInstance && ScaningMontage)
 				{
 					AnimInstance->Montage_Play(ScaningMontage);
@@ -456,6 +462,10 @@ void AVirusCharacter::AttackWeapon(float DeltaTime)
 									UGameplayStatics::ApplyDamage(BeamHitResult.GetActor(), BodyShotDamage, GetController(), this, UDamageType::StaticClass());
 								}
 							}
+							const FString command = FString::Printf(TEXT("HitSoundPlay"));
+							FOutputDeviceNull Ar;
+
+							CallFunctionByNameWithArguments(*command, Ar, NULL, true);
 						}
 						else if (HitVaccine) {
 							//Head Shot
@@ -474,12 +484,17 @@ void AVirusCharacter::AttackWeapon(float DeltaTime)
 									UGameplayStatics::ApplyDamage(BeamHitResult.GetActor(), BodyShotDamage, GetController(), this, UDamageType::StaticClass());
 								}
 							}
+							const FString command = FString::Printf(TEXT("HitSoundPlay"));
+							FOutputDeviceNull Ar;
 
+							CallFunctionByNameWithArguments(*command, Ar, NULL, true);
 						}
 						else if (HitOS) {
 							if (HitOS->Health > 0.f) {
-								HitOS->Health -= 10.f;
-
+								HitOS->Health -= BodyShotDamage;
+								const FString command = FString::Printf(TEXT("FireToOsSoundPlay"));
+								FOutputDeviceNull Ar;
+								CallFunctionByNameWithArguments(*command, Ar, NULL, true);
 							}
 							else {
 								HitOS->Die();
@@ -578,6 +593,8 @@ void AVirusCharacter::Heal(const FInputActionValue& Value)
 	if (bCanUseHeal)
 	{
 		bCanUseHeal = false;
+
+		if (HealSound) UGameplayStatics::PlaySound2D(this, HealSound);
 
 		const FString command = FString::Printf(TEXT("E_Cooldown"));
 		FOutputDeviceNull Ar;
@@ -947,6 +964,8 @@ void AVirusCharacter::PlayReloadMontage()
 			
 			//UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ReloadVFX, SocketTransform);
 		}
+
+		if (ReloadSound) UGameplayStatics::PlaySound2D(this, ReloadSound);
 	}
 }
 
@@ -974,6 +993,7 @@ void AVirusCharacter::UseItem(EItemType Type, AItem* Item)
 
 						AttackItem->SetAttackItemStatus(EAttackItemStatus::EAIS_Falling);
 						AttackItem->ThrowItem();
+						if (MineSetSound) UGameplayStatics::PlaySound2D(this, MineSetSound);
 					}
 				}
 
@@ -988,6 +1008,8 @@ void AVirusCharacter::UseItem(EItemType Type, AItem* Item)
 			float AttackDefenseTime = Item->GetItemDuration();
 			
 			bAttackDefense = true;
+			if (AttackDefenseSound) UGameplayStatics::PlaySound2D(this, AttackDefenseSound);
+
 			GetWorldTimerManager().SetTimer(AttackDefenseItemTimer, this, &AVirusCharacter::FinishAttackDefense, AttackDefenseTime);
 
 			break;
@@ -1084,6 +1106,8 @@ void AVirusCharacter::BroadHacking()
 	{
 		bCanUseBroadHacking = false;
 		
+		if (BroadHackingSound) UGameplayStatics::PlaySound2D(this, BroadHackingSound);
+
 		const FString command = FString::Printf(TEXT("Q_Cooldown"));
 		FOutputDeviceNull Ar;
 
@@ -1172,6 +1196,25 @@ void AVirusCharacter::Tick(float DeltaTime)
 		//FString Message = FString::Printf(TEXT("Equipped Weapon Scale : %f %f %f"), WeaponScale.X, WeaponScale.Y, WeaponScale.Z);
 		//GEngine->AddOnScreenDebugMessage(1, 0.f, FColor::White, Message);
 	}
+
+	if (CurrentHP > 30) {
+		if (bLowAlarmShow) {
+			const FString command = FString::Printf(TEXT("DeleteLowHPAlarm"));
+			FOutputDeviceNull Ar;
+			CallFunctionByNameWithArguments(*command, Ar, NULL, true);
+			bLowAlarmShow = false;
+		}
+	}
+	
+	else if (CurrentHP <= 30) {
+		if (!bLowAlarmShow) {
+			const FString command = FString::Printf(TEXT("LowHPAlarm"));
+			FOutputDeviceNull Ar;
+			CallFunctionByNameWithArguments(*command, Ar, NULL, true);
+			bLowAlarmShow = true;
+		}
+	}
+	
 }
 
 void AVirusCharacter::PlayStunMontage()
@@ -1194,6 +1237,11 @@ void AVirusCharacter::Die()
 	{
 		AnimInstance->Montage_Play(DeathMontage);
 		AnimInstance->Montage_JumpToSection("Death");
+
+		const FString command = FString::Printf(TEXT("GameOverScreen"));
+		FOutputDeviceNull Ar;
+
+		CallFunctionByNameWithArguments(*command, Ar, NULL, true);
 	}
 }
 
@@ -1289,7 +1337,7 @@ void AVirusCharacter::GetPickUpItem(AItem* Item)
 {
 	auto GetItem = Cast<AItem>(Item);
 	auto Weapon = Cast<AWeapon>(Item);
-
+	if (GetItemSound) UGameplayStatics::PlaySound2D(this, GetItemSound);
 	if (Weapon)
 	{
 		SwapWeapon(Weapon);
@@ -1339,6 +1387,10 @@ void AVirusCharacter::GetPickUpItem(AItem* Item)
 		}
 		else
 		{
+			const FString command = FString::Printf(TEXT("DeleteLockIcon"));
+			FOutputDeviceNull Ar;
+
+			if (UIMN) UIMN->CallFunctionByNameWithArguments(*command, Ar, NULL, true);
 			JumpMaxCount = 2;
 		}
 		

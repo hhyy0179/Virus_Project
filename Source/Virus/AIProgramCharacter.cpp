@@ -21,7 +21,7 @@
 #include "HackingGaugeManager.h"
 
 AAIProgramCharacter::AAIProgramCharacter() :
-	MaxHealth(100.f),
+	MaxHealth(50.0f),
 	HeadBone("Head"),
 	HealthBarDisplayTime(4.f)
 {
