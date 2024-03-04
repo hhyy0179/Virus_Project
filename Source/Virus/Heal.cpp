@@ -69,7 +69,6 @@ void AHeal::Tick(float DeltaTime)
 
 	const  FRotator MeshRotation{ 0.f, GetItemMesh()->GetComponentRotation().Yaw, 0.f };
 	GetItemMesh()->SetWorldRotation(MeshRotation, false, nullptr, ETeleportType::TeleportPhysics);
-
 }
 
 void AHeal::StopFalling()

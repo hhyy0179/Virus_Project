@@ -206,12 +206,20 @@ class AVirusCharacter : public ACharacter
 	TSubclassOf<AWeapon> DefaultWeaponClass;
 
 	/** The item currently hit by out trace in TraceForItems (could be null) */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Items, meta = (AllowPrivateAccess = "true"))
 	class AItem* TraceHitItem;
+
+	/** The item currently hit by out trace in TraceForItems (could be null) */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Items, meta = (AllowPrivateAccess = "true"))
+	class AItemBox* TraceHitItemBox;
 
 	/** The AItem we hit last frame */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Items, meta = (AllowPrivateAccess = "true"))
 	AItem* TraceHitItemLastFrame;
+
+	/** The AItem we hit last frame */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Items, meta = (AllowPrivateAccess = "true"))
+	AItemBox* TraceHitItemBoxLastFrame;
 
 	/** Distance upward from the camera for the interp destination */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Items, meta = (AllowPrivateAccess = "true"))
@@ -308,6 +316,10 @@ class AVirusCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Skill, meta = (AllowPrivateAccess = "true"))
 	bool bCCTVDefense;
 
+	int32 KeyIndex;
+	bool bWarningWidget;
+
+	bool bBoxOpening;
 protected:
 
 	/** Called for movement input */
@@ -399,6 +411,8 @@ protected:
 	void FinishAttackDefense();
 	
 	void FinishCCTVDefense();
+	
+	bool GetKeyEnough();
 
 public:
 	AVirusCharacter();
@@ -465,6 +479,10 @@ public:
 	void FinishDeath();
 
 	void SetDefenseStatus(EDefenseStatus Status);
+
+	UFUNCTION(BlueprintCallable)
+	void EndOpen();
+
 private:
 	float HeadShotDamage = 1.0f;
 	float BodyShotDamage = 0.5f;

@@ -30,6 +30,8 @@ protected:
 
 	class AHackingGaugeManager* GaugeManager;
 
+	void SpawnKey();
+
 public:
 	/** Particles to spawn when hit by bullets */
 	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"))
@@ -60,6 +62,14 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
 	class UAnimMontage* AttackMontage;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Item, meta = (AllowPrivateAccess = "true"))
+	TSubclassOf<class AItem> KeyClass;
+	
+	FTimerHandle FallingTimer;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Item, meta = (AllowPrivateAccess = "true"))
+	AItem* SpawnedKey;
 
 public:
 	// Called every frame

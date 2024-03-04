@@ -34,6 +34,7 @@
 #include "AIOperatingSystem.h"
 #include "Misc/OutputDeviceNull.h"
 #include "Particles/ParticleSystemComponent.h"
+#include "ItemBox.h"
 
 //////////////////////////////////////////////////////////////////////////
 // AVirusCharacter
@@ -69,7 +70,10 @@ AVirusCharacter::AVirusCharacter() :
 	bCanUseBroadHacking(true),
 	CombatState(ECombatState::ECS_Normal),
 	DefenseStatus(EDefenseStatus::EDS_DeActivate),
-	bAttackDefense(false)
+	bAttackDefense(false),
+	KeyIndex(-1),
+	bWarningWidget(true),
+	bBoxOpening(false)
 {
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
@@ -97,7 +101,7 @@ AVirusCharacter::AVirusCharacter() :
 	CameraBoom->TargetArmLength = 200.0f; // The camera follows at this distance behind the character	
 	CameraBoom->bUsePawnControlRotation = true; // Rotate the arm based on the controller
 
-	CameraBoom->SocketOffset = FVector(0.f, 50.f, 50.f);
+	CameraBoom->SocketOffset = FVector(0.f, 20.f, 50.f);
 
 	// Create a follow camera
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
@@ -165,8 +169,8 @@ void AVirusCharacter::BeginPlay()
 	
 	JumpMaxCount = 1;
 	//Spawn the default weapon and attach it to the mesh
-	//EquipWeapon(SpawnDefaultWeapon());
-	//EquippedWeapon->DisableCustomDepth();
+	EquipWeapon(SpawnDefaultWeapon());
+	EquippedWeapon->DisableCustomDepth();
 
 	UVirusGameInstance* VirusInstance = Cast<UVirusGameInstance>(GetGameInstance());
 
@@ -605,6 +609,20 @@ void AVirusCharacter::Select(const FInputActionValue& Value)
 		TraceHitItem = nullptr;
 	}
 
+	if (TraceHitItemBox)
+	{
+		if (GetKeyEnough())
+		{
+			TempInventory["Key"] -= 2;
+			if (TempInventory["Key"] == 0)
+			{
+				TempInventory.Remove("Key");
+				Inventory.RemoveAt(KeyIndex);
+			}
+			TraceHitItemBox->PlayAnimMontage();
+			bBoxOpening = true;
+		}
+	}
 }
 
 void AVirusCharacter::StopSelect(const FInputActionValue& Value)
@@ -666,7 +684,6 @@ void AVirusCharacter::GetInventory(const FInputActionValue& Value)
 			Inventory.RemoveAt(ItemKey - 1);
 		}
 		UseItem(ItemType,GetItem);
-		int32 GetItemIndex = GetItem->GetSlotIndex();
 	}
 
 }
@@ -735,7 +752,7 @@ bool AVirusCharacter::TraceUnderCrosshairs(FHitResult& OutHitResult, FVector& Ou
 
 void AVirusCharacter::TraceForItems()
 {
-	if (bShouldTraceForItems)
+	if (bShouldTraceForItems && !bBoxOpening)
 	{
 		FHitResult ItemTraceResult;
 		FVector HitLocation;
@@ -743,6 +760,7 @@ void AVirusCharacter::TraceForItems()
 		if (ItemTraceResult.bBlockingHit)
 		{
 			TraceHitItem = Cast<AItem>(ItemTraceResult.GetActor());
+			TraceHitItemBox = Cast<AItemBox>(ItemTraceResult.GetActor());
 			if (TraceHitItem && TraceHitItem->GetItemState() == EItemState::EIS_EquipInterping)
 			{
 				TraceHitItem = nullptr;
@@ -755,6 +773,23 @@ void AVirusCharacter::TraceForItems()
 				TraceHitItem->EnableCustomDepth();
 			}
 
+			if (TraceHitItemBox && TraceHitItemBox->GetPickUpWidget() && TraceHitItemBox->GetWarningWidget() && TraceHitItemBox->IsOverlappingActor(this))
+			{
+				//Show Item's PickupWidget
+				
+				if (GetKeyEnough())
+				{
+					TraceHitItemBox->GetPickUpWidget()->SetVisibility(true);
+					TraceHitItemBox->GetWarningWidget()->SetVisibility(false);
+				}
+				else
+				{
+					TraceHitItemBox->GetPickUpWidget()->SetVisibility(false);
+					TraceHitItemBox->GetWarningWidget()->SetVisibility(true);
+				}
+				TraceHitItemBox->EnableCustomDepth();
+			}
+
 			// We hit an AItem last frame
 			if (TraceHitItemLastFrame)
 			{
@@ -765,8 +800,21 @@ void AVirusCharacter::TraceForItems()
 					TraceHitItemLastFrame->DisableCustomDepth();
 				}
 			}
+
+			// We hit an AItem last frame
+			if (TraceHitItemBoxLastFrame)
+			{
+				if (TraceHitItemBox != TraceHitItemBoxLastFrame)
+				{
+					//We are hitting a different AItem this frame from last frame Or AItem is null
+					TraceHitItemBoxLastFrame->GetPickUpWidget()->SetVisibility(false);
+					TraceHitItemBoxLastFrame->GetWarningWidget()->SetVisibility(false);
+					TraceHitItemBoxLastFrame->DisableCustomDepth();
+				}
+			}
 			//store a reference to HitItem for next frame
 			TraceHitItemLastFrame = TraceHitItem;
+			TraceHitItemBoxLastFrame = TraceHitItemBox;
 		}
 	}
 	else if (TraceHitItemLastFrame)
@@ -775,6 +823,14 @@ void AVirusCharacter::TraceForItems()
 		//Items last frame should not show widget
 		TraceHitItemLastFrame->GetPickUpWidget()->SetVisibility(false);
 		TraceHitItemLastFrame->DisableCustomDepth();
+	}
+	else if (TraceHitItemBoxLastFrame)
+	{
+		//No longer overlapping any items,
+		//Items last frame should not show widget
+		TraceHitItemBoxLastFrame->GetPickUpWidget()->SetVisibility(false);
+		TraceHitItemBoxLastFrame->GetWarningWidget()->SetVisibility(false);
+		TraceHitItemBoxLastFrame->DisableCustomDepth();
 	}
 }
 
@@ -1093,7 +1149,6 @@ void AVirusCharacter::Die()
 		AnimInstance->Montage_Play(DeathMontage);
 		AnimInstance->Montage_JumpToSection("Death");
 	}
-
 }
 
 void AVirusCharacter::SetDefenseProperties(EDefenseStatus State)
@@ -1134,6 +1189,24 @@ void AVirusCharacter::FinishCCTVDefense()
 {
 	SetDefenseStatus(EDefenseStatus::EDS_DeActivate);
 	bCCTVDefense = false;
+}
+
+bool AVirusCharacter::GetKeyEnough()
+{
+	for (int i = 0; i < Inventory.Num(); i++)
+	{
+		auto GetItem = Inventory[i];
+		if (GetItem->GetItemType() == EItemType::EIT_Key)
+		{
+			KeyIndex = i;
+			FString ItemName = GetItem->GetItemName();
+			if(TempInventory[ItemName] >= 2)
+			{
+				return true;
+			}
+		}
+	}
+	return false;
 }
 
 float AVirusCharacter::GetCrosshairSpreadMultiplier() const
@@ -1180,6 +1253,7 @@ void AVirusCharacter::GetPickUpItem(AItem* Item)
 
 		if (ItemType != EItemType::EIT_DoubleJump)
 		{
+
 			if (!TempInventory.Contains(GetItem->GetItemName()))
 			{
 				if (Inventory.Num() < INVENTORY_CAPACITY)
@@ -1187,7 +1261,9 @@ void AVirusCharacter::GetPickUpItem(AItem* Item)
 					GetItem->SetSlotIndex(Inventory.Num());
 					Inventory.Add(GetItem);
 					TempInventory.Add(GetItem->GetItemName(), GetItem->GetItemCount());
+
 				}
+				
 			}
 			else
 			{
@@ -1198,12 +1274,12 @@ void AVirusCharacter::GetPickUpItem(AItem* Item)
 
 			FString Message = FString::Printf(TEXT("Get Item Count : %d "), value);
 			GEngine->AddOnScreenDebugMessage(1, 1.f, FColor::White, Message);
-			//FString Message = FString::Printf(TEXT("Get Slot Index : %d "), GetItem->GetSlotIndex());
-			//GEngine->AddOnScreenDebugMessage(1, 1.f, FColor::White, Message);
 			GetItem->SetItemState(EItemState::EIS_PickedUp);
 
+
+
 			// Play Widget Anim
-			if (TempInventory.Num() == 0)
+			/*			if (TempInventory.Num() == 0)
 			{
 				EquipItemDelegate.Broadcast(-1, GetItem->GetSlotIndex());
 			}
@@ -1212,6 +1288,7 @@ void AVirusCharacter::GetPickUpItem(AItem* Item)
 				EquipItemDelegate.Broadcast((GetItem->GetSlotIndex()) - 1, GetItem->GetSlotIndex());
 				//GEngine->AddOnScreenDebugMessage(1, 1.f, FColor::White, FString::Printf(TEXT("CurrentIndex: %d, NextIndex: %d"), GetItem->GetSlotIndex(), TempInventory.Num()));
 			}
+			*/
 		}
 		else
 		{
@@ -1252,5 +1329,10 @@ void AVirusCharacter::SetDefenseStatus(EDefenseStatus Status)
 {
 	DefenseStatus = Status;
 	SetDefenseProperties(DefenseStatus);
+}
+
+void AVirusCharacter::EndOpen()
+{
+	bBoxOpening = false;
 }
 

@@ -42,13 +42,20 @@ void AAIVaccineCharacter2::BeginPlay() {
 	Health = MaxHealth;
 	GetWidgetComponentFromActor();
 	HideHealthBar();
+
+	if (KeyClass)
+	{
+		FTransform ActorTransform = this->GetActorTransform();
+		SpawnedKey = GetWorld()->SpawnActor<AItem>(KeyClass, ActorTransform);
+
+		SpawnedKey->GetItemMesh()->SetVisibility(false);
+	}
 }
 
 UWidgetComponent* AAIVaccineCharacter2::GetWidgetComponentFromActor()
 {
 	if (this)
 	{
-		// ������ ��Ʈ ������Ʈ�� �����ɴϴ�.
 
 		if (RootComponent)
 		{
@@ -97,6 +104,14 @@ void AAIVaccineCharacter2::HideHealthBar()
 	HPBarWidgetComponent->SetVisibility(false);
 }
 
+void AAIVaccineCharacter2::SpawnKey()
+{
+	UE_LOG(LogTemp, Error, TEXT("Hello World"));
+	if(SpawnedKey)
+		SpawnedKey->SetItemState(EItemState::EIS_Pickup);
+
+}
+
 void AAIVaccineCharacter2::Die()
 {
 	GaugeManager->Percent += 0.01f;
@@ -108,14 +123,16 @@ void AAIVaccineCharacter2::Die()
 	this->SetActorLocation(FVector(0.f, 0.f, 0.f));
 	
 	int RandomValue = FMath::RandRange(1, 10);
+	SpawnedKey->SetItemState(EItemState::EIS_Falling);
+
 	if (RandomValue < 8) {
 		// Spawn Actor
 		TSubclassOf<AAIAllyCharacter> NewActorClass = AAIAllyCharacter::StaticClass();
 		UObject* ClassPackage = ANY_PACKAGE;
+		
+		SpawnedKey->SetItemState(EItemState::EIS_Falling);
+		GetWorldTimerManager().SetTimer(FallingTimer, this, &AAIVaccineCharacter2::SpawnKey, 1.f);
 
-		UObject* SpawnActor = Cast<UObject>(StaticLoadObject(UObject::StaticClass(), NULL, TEXT("/Script/Engine.Blueprint'/Game/_VirusGame/Items/Item/Item/BP_Item.BP_Item'")));
-		UBlueprint* GeneratedBP = Cast<UBlueprint>(SpawnActor);
-		GetWorld()->SpawnActor<AActor>(GeneratedBP->GeneratedClass, ActorTransform);
 	}
 	else {
 		UE_LOG(LogTemp, Warning, TEXT("Fail RandomValue: %d"), RandomValue);

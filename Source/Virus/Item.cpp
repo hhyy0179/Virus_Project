@@ -365,7 +365,7 @@ void AItem::Tick(float DeltaTime)
 void AItem::SetItemState(EItemState State)
 {
 	ItemState = State;
-	SetItemProperties(State);
+	SetItemProperties(ItemState);
 }
 
 void AItem::StartItemCurve(AVirusCharacter* Char)
