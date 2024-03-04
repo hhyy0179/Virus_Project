@@ -638,6 +638,7 @@ void AVirusCharacter::Aiming(const FInputActionValue& Value)
 	{
 		bAiming = true;
 	}
+
 }
 
 void AVirusCharacter::StopAiming(const FInputActionValue& Value)
@@ -1064,7 +1065,7 @@ void AVirusCharacter::HealPackOverlap(float DeltaTime)
 
 		float DeltaHP = 20.0f * DeltaTime;
 
-		if (CurrentHP <= MaxHP)
+		if (CurrentHP < MaxHP)
 		{
 			CurrentHP += DeltaHP;
 		}
