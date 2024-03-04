@@ -47,8 +47,6 @@ void AAIVaccineCharacter2::BeginPlay() {
 	{
 		FTransform ActorTransform = this->GetActorTransform();
 		SpawnedKey = GetWorld()->SpawnActor<AItem>(KeyClass, ActorTransform);
-
-		SpawnedKey->GetItemMesh()->SetVisibility(false);
 	}
 }
 

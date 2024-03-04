@@ -46,6 +46,8 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Skill, meta = (AllowPrivateAccess = "true"))
 	class UParticleSystem* OpenVFX;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = ItemProperties, meta = (AllowPrivateAccess = "true"))
+	bool bOpened;
 public:	
 	// Sets default values for this actor's properties
 	AItemBox();
@@ -78,4 +80,5 @@ public:
 
 	void PlayAnimMontage();
 
+	FORCEINLINE bool isOpened() const { return bOpened; }
 };
