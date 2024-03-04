@@ -488,9 +488,10 @@ void AVirusCharacter::AttackWeapon(float DeltaTime)
 						}
 						else if (HitOS) {
 							if (HitOS->Health > 0.f) {
-								HitOS->Health -= 10.f;
-								if (FireToOSSound) UGameplayStatics::PlaySoundAtLocation(this, FireToOSSound, HitOS->GetActorLocation());
-
+								HitOS->Health -= BodyShotDamage;
+								const FString command = FString::Printf(TEXT("FireToOsSoundPlay"));
+								FOutputDeviceNull Ar;
+								CallFunctionByNameWithArguments(*command, Ar, NULL, true);
 							}
 							else {
 								HitOS->Die();
