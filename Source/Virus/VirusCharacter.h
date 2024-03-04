@@ -114,6 +114,7 @@ class AVirusCharacter : public ACharacter
 	TSubclassOf<UUserWidget> SkillClass;
 	UUserWidget* SkillWidget;
 
+	bool bLowAlarmShow = false;
 	/** True when aiming*/
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
 	bool bAiming;

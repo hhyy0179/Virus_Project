@@ -1184,6 +1184,25 @@ void AVirusCharacter::Tick(float DeltaTime)
 		//FString Message = FString::Printf(TEXT("Equipped Weapon Scale : %f %f %f"), WeaponScale.X, WeaponScale.Y, WeaponScale.Z);
 		//GEngine->AddOnScreenDebugMessage(1, 0.f, FColor::White, Message);
 	}
+
+	if (CurrentHP > 30) {
+		if (bLowAlarmShow) {
+			const FString command = FString::Printf(TEXT("DeleteLowHPAlarm"));
+			FOutputDeviceNull Ar;
+			CallFunctionByNameWithArguments(*command, Ar, NULL, true);
+			bLowAlarmShow = false;
+		}
+	}
+	
+	else if (CurrentHP <= 30) {
+		if (!bLowAlarmShow) {
+			const FString command = FString::Printf(TEXT("LowHPAlarm"));
+			FOutputDeviceNull Ar;
+			CallFunctionByNameWithArguments(*command, Ar, NULL, true);
+			bLowAlarmShow = true;
+		}
+	}
+	
 }
 
 void AVirusCharacter::PlayStunMontage()
