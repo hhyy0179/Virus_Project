@@ -364,6 +364,8 @@ protected:
 
 	void CameraInterpZoom(float DeltaTime);
 
+	void CameraInterpZoomOut(float DeltaTime);
+
 	void CalculateCrosshairSpread(float DeltaTime);
 
 	/** Line trace for items under the crosshairs */
