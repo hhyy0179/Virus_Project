@@ -693,34 +693,39 @@ void AVirusCharacter::GetInventory(const FInputActionValue& Value)
 
 void AVirusCharacter::CameraInterpZoom(float DeltaTime)
 {
-	if (bAiming)
+	if (!bAttackDefense && !bCCTVDefense)
 	{
-		CameraCurrentFOV = FMath::FInterpTo(CameraCurrentFOV, CameraZoomedFOV, DeltaTime, ZoomInterpSpeed);
-		CameraBoom->TargetArmLength = 50.0f;
+		if (bAiming)
+		{
+			CameraCurrentFOV = FMath::FInterpTo(CameraCurrentFOV, CameraZoomedFOV, DeltaTime, ZoomInterpSpeed);
+			CameraBoom->TargetArmLength = 50.0f;
+		}
+		else
+		{
+			CameraCurrentFOV = FMath::FInterpTo(CameraCurrentFOV, CameraDefaultFOV, DeltaTime, ZoomInterpSpeed);
+			CameraBoom->TargetArmLength = 200.0f;
+		}
 	}
-	else
-	{
-		CameraCurrentFOV = FMath::FInterpTo(CameraCurrentFOV, CameraDefaultFOV, DeltaTime, ZoomInterpSpeed);
-		CameraBoom->TargetArmLength = 200.0f;
-	}
-
-	/*
-	* if (bAttackDefense || bCCTVDefense)
-	{
-		CameraCurrentFOV = FMath::FInterpTo(CameraCurrentFOV, CameraZoomedOutFOV, DeltaTime, ZoomInterpSpeed);
-		CameraBoom->TargetArmLength = 500.0f;
-	}
-	else
-	{
-		CameraCurrentFOV = FMath::FInterpTo(CameraCurrentFOV, CameraDefaultFOV, DeltaTime, ZoomInterpSpeed);
-		CameraBoom->TargetArmLength = 200.0f;
-	}
-	*/
-	
-
 	GetFollowCamera()->SetFieldOfView(CameraCurrentFOV);
-	
 }
+
+void AVirusCharacter::CameraInterpZoomOut(float DeltaTime)
+{
+	if (!bAiming)
+	{
+		if (bAttackDefense || bCCTVDefense)
+		{
+			CameraCurrentFOV = FMath::FInterpTo(CameraCurrentFOV, CameraZoomedOutFOV, DeltaTime, ZoomInterpSpeed);
+			CameraBoom->TargetArmLength = 1000.0f;
+		}
+		else
+		{
+			CameraCurrentFOV = FMath::FInterpTo(CameraCurrentFOV, CameraDefaultFOV, DeltaTime, ZoomInterpSpeed);
+			CameraBoom->TargetArmLength = 200.0f;
+		}
+	}
+}
+	
 
 void AVirusCharacter::CalculateCrosshairSpread(float DeltaTime)
 {
@@ -1143,6 +1148,9 @@ void AVirusCharacter::Tick(float DeltaTime)
 
 	//Handle interpolation for zoom when aiming
 	CameraInterpZoom(DeltaTime);
+
+	CameraInterpZoomOut(DeltaTime);
+
 	//Calculate Crosshair Spread Multiplier
 	CalculateCrosshairSpread(DeltaTime);
 
