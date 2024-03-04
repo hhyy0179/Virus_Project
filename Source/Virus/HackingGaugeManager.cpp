@@ -43,7 +43,7 @@ void AHackingGaugeManager::BeginPlay()
 
 		if (IsValid(HackingGauageWidget))
 		{
-			// À§Á¬À» ºäÆ÷Æ®¿¡ ¶ç¿ì´Â ÇÔ¼ö
+			// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Æ®ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ô¼ï¿½
 			HackingGauageWidget->AddToViewport();
 		}
 	}
@@ -99,7 +99,7 @@ void AHackingGaugeManager::ControlGauge(float Value)
 
 			if (IsValid(GameClearWidget))
 			{
-				// À§Á¬À» ºäÆ÷Æ®¿¡ ¶ç¿ì´Â ÇÔ¼ö
+				// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Æ®ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ô¼ï¿½
 				GameClearWidget->AddToViewport();
 
 			}

@@ -301,6 +301,10 @@ void AItem::OnConstruction(const FTransform& Transform)
 		switch (ItemType)
 		{
 
+		case EItemType::EIT_Weapon:
+			TypeRow = TypeTableObject->FindRow<FItemTypeDataTable>(FName("Weapon"), TEXT(""));
+			break;
+
 		case EItemType::EIT_AttackItem:
 			TypeRow = TypeTableObject->FindRow<FItemTypeDataTable>(FName("AttackItem"),TEXT(""));
 			break;

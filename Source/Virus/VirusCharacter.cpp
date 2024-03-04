@@ -852,7 +852,9 @@ AWeapon* AVirusCharacter::SpawnDefaultWeapon()
 	if (DefaultWeaponClass)
 	{
 		//Spawn the Weapon
-		return GetWorld()->SpawnActor<AWeapon>(DefaultWeaponClass);
+		EquippedWeapon = GetWorld()->SpawnActor<AWeapon>(DefaultWeaponClass);
+		EquippedWeapon->SetItemType(EItemType::EIT_Weapon);
+		return EquippedWeapon;
 	}
 
 	return nullptr;
@@ -1158,6 +1160,7 @@ void AVirusCharacter::PlayStunMontage()
 {
 	if (AnimInstance && HitReactMontage)
 	{
+		
 		AnimInstance->Montage_Play(HitReactMontage);
 		GetCharacterMovement()->MaxWalkSpeed = 100.f;
 	}
