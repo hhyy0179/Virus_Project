@@ -32,15 +32,8 @@ protected:
 
 	void SpawnKey();
 
+	void Die();
 public:
-	/** Particles to spawn when hit by bullets */
-	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"))
-	class UParticleSystem* ImpactParicles;
-
-	/** Sound to play when hit by bullets */
-	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"))
-	class USoundCue* ImpactSound;
-
 	/** Current health of the enemy */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	float Health;
@@ -55,10 +48,21 @@ public:
 	/** Time to display Health Bar once shot */
 	FTimerHandle HealthBarTimer;
 
+private:
+
+	/** Particles to spawn when hit by bullets */
+	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"))
+	class UParticleSystem* ImpactParicles;
+
+	/** Sound to play when hit by bullets */
+	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"))
+	class USoundCue* ImpactSound;
+
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"))
 	float HealthBarDisplayTime;
 
-	void Die();
+	
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
 	class UAnimMontage* AttackMontage;
@@ -66,10 +70,11 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Item, meta = (AllowPrivateAccess = "true"))
 	TSubclassOf<class AItem> KeyClass;
 	
-	FTimerHandle FallingTimer;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Item, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Item, meta = (AllowPrivateAccess = "true"))
 	AItem* SpawnedKey;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Item, meta = (AllowPrivateAccess = "true"))
+	bool bFalling;
 
 public:
 	// Called every frame
