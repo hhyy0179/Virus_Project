@@ -156,11 +156,11 @@ void AHeal::SetHealProperties(EHealStatus State)
 }
 
 
-void AHeal::ThrowHealPack()
+void AHeal::ThrowHealPack(float CharacterSpeed)
 {
 	FRotator MeshRotation{ 0.f, GetItemMesh()->GetComponentRotation().Yaw, 0.f };
 	GetItemMesh()->SetWorldRotation(MeshRotation, false, nullptr, ETeleportType::TeleportPhysics);
-	SetActorScale3D(FVector(1.0f));
+	SetActorScale3D(FVector(1.5f));
 	const FVector MeshForward{ GetItemMesh()->GetForwardVector() };
 	const FVector MeshRight{ GetItemMesh()->GetRightVector() };
 
@@ -173,7 +173,8 @@ void AHeal::ThrowHealPack()
 	
 	float RandomRotation = { 30.f };
 	ImpulseDirection = ImpulseDirection.RotateAngleAxis(RandomRotation, FVector(0.f, 0.f, 1.f));
-	ImpulseDirection *= 1'000.f;
+
+	ImpulseDirection *= 2'000.f + (8.f * CharacterSpeed); 
 
 	//Use MeshRight to randomize
 	GetItemMesh()->AddImpulse(ImpulseDirection);

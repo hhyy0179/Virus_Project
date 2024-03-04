@@ -76,7 +76,7 @@ private:
 public:
 
 	/** Adds the impulse to the Weapon */
-	void ThrowHealPack();
+	void ThrowHealPack(float CharacterSpeed);
 
 	FORCEINLINE USkeletalMeshComponent* GetItemMesh() const { return ItemMesh; }
 	
