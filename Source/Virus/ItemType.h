@@ -3,6 +3,7 @@
 UENUM(BlueprintType)
 enum class EItemType : uint8
 {
+	EIT_Weapon UMETA(DisplayName = "Weapon"),
 	EIT_AttackItem UMETA(DisplayName = "AttackItem"),
 	EIT_CCTVDefenseItem UMETA(DisplayName = "CCTVDefenseItem"),
 	EIT_AttackDefenseItem UMETA(DisplayName = "AttackDefenseItem"),

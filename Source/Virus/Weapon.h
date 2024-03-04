@@ -64,5 +64,4 @@ public:
 	FORCEINLINE float GetGageAmount() const { return GageAmount; }
 	FORCEINLINE EWeapongageStatus GetWeapongageStatus() const { return GageStatus; }
 	FORCEINLINE void SetWeapongageStatus(EWeapongageStatus Status) { GageStatus = Status; }
-
 };
