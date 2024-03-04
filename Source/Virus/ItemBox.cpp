@@ -9,7 +9,8 @@
 #include "VirusCharacter.h"
 
 // Sets default values
-AItemBox::AItemBox()
+AItemBox::AItemBox():
+	bOpened(false)
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -46,6 +47,8 @@ void AItemBox::BeginPlay()
 	//Hide Pickup Widget
 	PickUpWidget->SetVisibility(false);
 	WarningWidget->SetVisibility(false);
+
+	
 }
 
 
@@ -90,7 +93,6 @@ void AItemBox::EnableCustomDepth()
 {
 	BoxTop->SetRenderCustomDepth(true);
 	BoxBottom->SetRenderCustomDepth(true);
-
 }
 
 void AItemBox::DisableCustomDepth()
@@ -109,6 +111,7 @@ void AItemBox::PlayAnimMontage()
 			const FTransform BoxTransform = BoxBottom->GetRelativeTransform();
 			UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), OpenVFX, BoxTransform);
 		}
+		bOpened = true;
 	}
 
 }

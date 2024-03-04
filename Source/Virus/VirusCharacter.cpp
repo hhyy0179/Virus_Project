@@ -35,7 +35,7 @@
 #include "Misc/OutputDeviceNull.h"
 #include "Particles/ParticleSystemComponent.h"
 #include "ItemBox.h"
-
+#include "BroadHackingSkill.h"
 //////////////////////////////////////////////////////////////////////////
 // AVirusCharacter
 
@@ -48,6 +48,7 @@ AVirusCharacter::AVirusCharacter() :
 
 	CameraDefaultFOV(0.f), //set in BeginPlay
 	CameraZoomedFOV(50.f),
+	CameraZoomedOutFOV(90.f),
 	CameraCurrentFOV(50.f),
 	ZoomInterpSpeed(20.f),
 
@@ -239,7 +240,6 @@ float AVirusCharacter::TakeDamage(float DamageAmount, FDamageEvent const& Damage
 			
 		}
 		*/
-		
 
 	}
 	else
@@ -624,7 +624,7 @@ void AVirusCharacter::Select(const FInputActionValue& Value)
 
 	if (TraceHitItemBox)
 	{
-		if (GetKeyEnough())
+		if (GetKeyEnough() && TraceHitItemBox->isOpened() == false)
 		{
 			TempInventory["Key"] -= 2;
 			if (TempInventory["Key"] == 0)
@@ -689,6 +689,8 @@ void AVirusCharacter::GetInventory(const FInputActionValue& Value)
 		AItem* GetItem = Cast<AItem>(Inventory[ItemKey - 1]);
 		FString ItemName = GetItem->GetItemName();
 		EItemType ItemType = GetItem->GetItemType();
+
+		if (ItemType == EItemType::EIT_Key) return;
 		TempInventory[ItemName]--;
 
 		if (TempInventory[ItemName] == 0)
@@ -713,7 +715,21 @@ void AVirusCharacter::CameraInterpZoom(float DeltaTime)
 		CameraCurrentFOV = FMath::FInterpTo(CameraCurrentFOV, CameraDefaultFOV, DeltaTime, ZoomInterpSpeed);
 		CameraBoom->TargetArmLength = 200.0f;
 	}
+
+	if (bAttackDefense || bCCTVDefense)
+	{
+		bAiming = false;
+		CameraCurrentFOV = FMath::FInterpTo(CameraCurrentFOV, CameraZoomedOutFOV, DeltaTime, ZoomInterpSpeed);
+		CameraBoom->TargetArmLength = 500.0f;
+	}
+	else
+	{
+		CameraCurrentFOV = FMath::FInterpTo(CameraCurrentFOV, CameraDefaultFOV, DeltaTime, ZoomInterpSpeed);
+		CameraBoom->TargetArmLength = 200.0f;
+	}
+
 	GetFollowCamera()->SetFieldOfView(CameraCurrentFOV);
+	
 }
 
 void AVirusCharacter::CalculateCrosshairSpread(float DeltaTime)
@@ -925,6 +941,16 @@ void AVirusCharacter::PlayReloadMontage()
 	{
 		AnimInstance->Montage_Play(ScaningMontage);
 		AnimInstance->Montage_JumpToSection("Reload");
+		/* New */
+		const USkeletalMeshSocket* BarrelSocket = EquippedWeapon->GetItemMesh()->GetSocketByName("BarrelSocket");
+
+		if (BarrelSocket && ReloadVFX)
+		{
+			//FTransform SocketTransform = BarrelSocket->GetSocketTransform(GetMesh(), ERelativeTransformSpace::RTS_World);
+			FTransform SocketTransform = EquippedWeapon->GetItemMesh()->GetSocketTransform(FName("BarrelSocket"), ERelativeTransformSpace::RTS_World);
+			UGameplayStatics::SpawnEmitterAttached(ReloadVFX, EquippedWeapon->GetItemMesh(), NAME_None, SocketTransform.GetLocation(), FRotator::ZeroRotator, EAttachLocation::KeepWorldPosition);
+			//UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ReloadVFX, SocketTransform);
+		}
 
 		if (ReloadSound) UGameplayStatics::PlaySound2D(this, ReloadSound);
 	}
@@ -1022,15 +1048,15 @@ void AVirusCharacter::SpawnBroadHackingAfterAnim()
 	{
 		FTransform BroadHackingSocketTransform = BroadHackingSocket->GetSocketTransform(GetMesh());
 
-		ABroadHacking* AttackItem = GetWorld()->SpawnActor<ABroadHacking>(DefaultBroadHackingClass, BroadHackingSocketTransform);
+		ABroadHackingSkill* AttackRange = GetWorld()->SpawnActor<ABroadHackingSkill>(DefaultBroadHackingClass, BroadHackingSocketTransform);
 
-		if (AttackItem)
+		if (AttackRange)
 		{
 			FDetachmentTransformRules DetachmentTransformRules(EDetachmentRule::KeepWorld, true);
-			AttackItem->GetItemMesh()->DetachFromComponent(DetachmentTransformRules);
+			AttackRange->GetItemMesh()->DetachFromComponent(DetachmentTransformRules);
 
-			AttackItem->SetBroadHackingStatus(EBroadHackingStatus::EBHS_Falling);
-			AttackItem->ThrowAttackRange();
+			AttackRange->SetBroadHackingStatus(EBroadHackingSkillStatus::EBHSS_Falling);
+			AttackRange->ThrowItem(GetCharacterMovement()->Velocity.Size());
 
 			GetWorldTimerManager().SetTimer(BroadHackingCoolTimer, this, &AVirusCharacter::CanUseBroadHacking, BroadHackinglCoolTime);
 		}
@@ -1163,6 +1189,10 @@ void AVirusCharacter::PlayStunMontage()
 		
 		AnimInstance->Montage_Play(HitReactMontage);
 		GetCharacterMovement()->MaxWalkSpeed = 100.f;
+		if (HitVFX)
+		{
+			UGameplayStatics::SpawnEmitterAttached(HitVFX, GetCapsuleComponent(), NAME_None, GetCapsuleComponent()->GetRelativeLocation(), FRotator::ZeroRotator, EAttachLocation::KeepWorldPosition);
+		}
 	}
 }
 
@@ -1222,6 +1252,7 @@ bool AVirusCharacter::GetKeyEnough()
 		auto GetItem = Inventory[i];
 		if (GetItem->GetItemType() == EItemType::EIT_Key)
 		{
+			GEngine->AddOnScreenDebugMessage(22, 3.f, FColor::Cyan, FString::Printf(TEXT("KeyIndex: %d"), KeyIndex));
 			KeyIndex = i;
 			FString ItemName = GetItem->GetItemName();
 			if(TempInventory[ItemName] >= 2)
@@ -1303,7 +1334,7 @@ void AVirusCharacter::GetPickUpItem(AItem* Item)
 
 
 			// Play Widget Anim
-			/*			if (TempInventory.Num() == 0)
+			/*if (TempInventory.Num() == 0)
 			{
 				EquipItemDelegate.Broadcast(-1, GetItem->GetSlotIndex());
 			}

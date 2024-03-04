@@ -124,6 +124,9 @@ class AVirusCharacter : public ACharacter
 	/** Field of view value for when zoomed in */
 	float CameraZoomedFOV;
 
+	/** Field of view value for when zoomed in */
+	float CameraZoomedOutFOV;
+
 	/** Current field of view this frame */
 	float CameraCurrentFOV;
 
@@ -140,8 +143,14 @@ class AVirusCharacter : public ACharacter
 	class UAnimMontage* DoubleJumpMontage;
 
 	/** Flash spawned at BarrelSocket */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Skill, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = VFX, meta = (AllowPrivateAccess = "true"))
 	class UParticleSystem* BroadHackingVFX;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = VFX, meta = (AllowPrivateAccess = "true"))
+	UParticleSystem* ReloadVFX;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = VFX, meta = (AllowPrivateAccess = "true"))
+	UParticleSystem* HitVFX;
 
 	/** Montage for healing action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Skill, meta = (AllowPrivateAccess = "true"))
@@ -256,7 +265,7 @@ class AVirusCharacter : public ACharacter
 
 	/** Set this in Blurprints for the default broadhacking class */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
-	TSubclassOf<class ABroadHacking> DefaultBroadHackingClass;
+	TSubclassOf<class ABroadHackingSkill> DefaultBroadHackingClass;
 
 	FTimerHandle HealCoolTimer;
 
@@ -316,6 +325,8 @@ class AVirusCharacter : public ACharacter
 	bool bWarningWidget;
 
 	bool bBoxOpening;
+
+	float PreviousAlpha = 0;
 
 protected:
 
