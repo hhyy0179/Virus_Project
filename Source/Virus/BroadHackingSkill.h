@@ -74,6 +74,9 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ItemProperties, meta = (AllowPrivateAccess = "true"))
 	EBroadHackingSkillStatus AttackStatus;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = VFX, meta = (AllowPrivateAccess = "true"))
+	UParticleSystem* EnemyHitVFX;
+
 public:
 
 	/** Adds the impulse to the Weapon */
@@ -83,6 +86,6 @@ public:
 
 	FORCEINLINE EBroadHackingSkillStatus GetAttackStatus() const { return AttackStatus; }
 	void SetBroadHackingStatus(EBroadHackingSkillStatus Status);
-	FORCEINLINE bool GetHealOverlap() const { return bAttackOverlapped; }
+	FORCEINLINE bool GetAttackOverlap() const { return bAttackOverlapped; }
 
 };

@@ -936,6 +936,7 @@ void AVirusCharacter::PlayReloadMontage()
 			//FTransform SocketTransform = BarrelSocket->GetSocketTransform(GetMesh(), ERelativeTransformSpace::RTS_World);
 			FTransform SocketTransform = EquippedWeapon->GetItemMesh()->GetSocketTransform(FName("BarrelSocket"), ERelativeTransformSpace::RTS_World);
 			UGameplayStatics::SpawnEmitterAttached(ReloadVFX, EquippedWeapon->GetItemMesh(), NAME_None, SocketTransform.GetLocation(), FRotator::ZeroRotator, EAttachLocation::KeepWorldPosition);
+			
 			//UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ReloadVFX, SocketTransform);
 		}
 	}
