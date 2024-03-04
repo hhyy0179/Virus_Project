@@ -23,7 +23,8 @@
 AAIVaccineCharacter2::AAIVaccineCharacter2():
 	MaxHealth(150.f),
 	HeadBone("Head"),
-	HealthBarDisplayTime(4.f)
+	HealthBarDisplayTime(4.f),
+	bFalling(false)
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -43,11 +44,6 @@ void AAIVaccineCharacter2::BeginPlay() {
 	GetWidgetComponentFromActor();
 	HideHealthBar();
 
-	if (KeyClass)
-	{
-		FTransform ActorTransform = this->GetActorTransform();
-		SpawnedKey = GetWorld()->SpawnActor<AItem>(KeyClass, ActorTransform);
-	}
 }
 
 UWidgetComponent* AAIVaccineCharacter2::GetWidgetComponentFromActor()
@@ -104,9 +100,8 @@ void AAIVaccineCharacter2::HideHealthBar()
 
 void AAIVaccineCharacter2::SpawnKey()
 {
-	UE_LOG(LogTemp, Error, TEXT("Hello World"));
-	if(SpawnedKey)
-		SpawnedKey->SetItemState(EItemState::EIS_Pickup);
+	GEngine->AddOnScreenDebugMessage(44, 3.0f, FColor::Cyan, FString::Printf(TEXT("gggggg")));
+	SpawnedKey->SetItemState(EItemState::EIS_Pickup);
 
 }
 
@@ -114,27 +109,30 @@ void AAIVaccineCharacter2::Die()
 {
 	GaugeManager->Percent += 0.01f;
 	GaugeManager->ControlGauge(GaugeManager->Percent);
-
+	
 	HideHealthBar();
-	GetWorld()->DestroyActor(this);
+	
 	FTransform ActorTransform = this->GetActorTransform();
-	this->SetActorLocation(FVector(0.f, 0.f, 0.f));
+	//this->SetActorLocation(FVector(0.f, 0.f, 0.f));
 	
 	int RandomValue = FMath::RandRange(1, 10);
-	SpawnedKey->SetItemState(EItemState::EIS_Falling);
 
 	if (RandomValue < 8) {
 		// Spawn Actor
 		TSubclassOf<AAIAllyCharacter> NewActorClass = AAIAllyCharacter::StaticClass();
 		UObject* ClassPackage = ANY_PACKAGE;
 		
-		SpawnedKey->SetItemState(EItemState::EIS_Falling);
-		GetWorldTimerManager().SetTimer(FallingTimer, this, &AAIVaccineCharacter2::SpawnKey, 1.f);
-
+		SpawnedKey = GetWorld()->SpawnActor<AItem>(KeyClass, ActorTransform);
+		SpawnedKey->SetItemState(EItemState::EIS_Pickup);
+		SpawnedKey->SetItemType(EItemType::EIT_Key);
+		bFalling = true;
 	}
 	else {
 		UE_LOG(LogTemp, Warning, TEXT("Fail RandomValue: %d"), RandomValue);
 	}
+
+	GetWorld()->DestroyActor(this);
+	
 }
 
 void AAIVaccineCharacter2::Tick(float DeltaTime)

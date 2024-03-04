@@ -620,6 +620,7 @@ void AVirusCharacter::Select(const FInputActionValue& Value)
 				Inventory.RemoveAt(KeyIndex);
 			}
 			TraceHitItemBox->PlayAnimMontage();
+			TraceHitItemBox->GetCollisionBox()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 			bBoxOpening = true;
 		}
 	}
@@ -695,7 +696,7 @@ void AVirusCharacter::CameraInterpZoom(float DeltaTime)
 	if (bAiming)
 	{
 		CameraCurrentFOV = FMath::FInterpTo(CameraCurrentFOV, CameraZoomedFOV, DeltaTime, ZoomInterpSpeed);
-		CameraBoom->TargetArmLength = 100.0f;
+		CameraBoom->TargetArmLength = 50.0f;
 	}
 	else
 	{
@@ -703,9 +704,9 @@ void AVirusCharacter::CameraInterpZoom(float DeltaTime)
 		CameraBoom->TargetArmLength = 200.0f;
 	}
 
-	if (bAttackDefense || bCCTVDefense)
+	/*
+	* if (bAttackDefense || bCCTVDefense)
 	{
-		bAiming = false;
 		CameraCurrentFOV = FMath::FInterpTo(CameraCurrentFOV, CameraZoomedOutFOV, DeltaTime, ZoomInterpSpeed);
 		CameraBoom->TargetArmLength = 500.0f;
 	}
@@ -714,6 +715,8 @@ void AVirusCharacter::CameraInterpZoom(float DeltaTime)
 		CameraCurrentFOV = FMath::FInterpTo(CameraCurrentFOV, CameraDefaultFOV, DeltaTime, ZoomInterpSpeed);
 		CameraBoom->TargetArmLength = 200.0f;
 	}
+	*/
+	
 
 	GetFollowCamera()->SetFieldOfView(CameraCurrentFOV);
 	
@@ -792,7 +795,6 @@ void AVirusCharacter::TraceForItems()
 			if (TraceHitItemBox && !bBoxOpening && TraceHitItemBox->GetPickUpWidget() && TraceHitItemBox->GetWarningWidget() && TraceHitItemBox->IsOverlappingActor(this))
 			{
 				//Show Item's PickupWidget
-				
 				if (GetKeyEnough())
 				{
 					TraceHitItemBox->GetPickUpWidget()->SetVisibility(true);
@@ -818,7 +820,7 @@ void AVirusCharacter::TraceForItems()
 			}
 
 			// We hit an AItem last frame
-			if (TraceHitItemBoxLastFrame && !bBoxOpening)
+			if (TraceHitItemBoxLastFrame)
 			{
 				if (TraceHitItemBox != TraceHitItemBoxLastFrame)
 				{
