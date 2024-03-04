@@ -533,11 +533,12 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Sound, meta = (AllowPrivateAccess = "true"))
 	class USoundCue* ReloadSound;
 
-
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Sound, meta = (AllowPrivateAccess = "true"))
 	class USoundCue* GetItemSound;
 
 	bool bFireSoundPlaying = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Bool, meta = (AllowPrivateAccess = "true"))
+	bool bInRealWorld = false;
 };
 

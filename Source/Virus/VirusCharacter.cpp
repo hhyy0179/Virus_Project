@@ -390,11 +390,14 @@ void AVirusCharacter::AttackWeapon(float DeltaTime)
 			if (Controller != nullptr && FireSound)
 			{
 				//UE_LOG(LogTemp, Warning, TEXT("Attack"));
-				const FString command = FString::Printf(TEXT("FireSoundPlay"));
-				FOutputDeviceNull Ar;
 
-				CallFunctionByNameWithArguments(*command, Ar, NULL, true);
-				
+				if (bInRealWorld) {
+					const FString command = FString::Printf(TEXT("FireSoundPlay"));
+					FOutputDeviceNull Ar;
+
+					CallFunctionByNameWithArguments(*command, Ar, NULL, true);
+				}
+
 				if (AnimInstance && ScaningMontage)
 				{
 					AnimInstance->Montage_Play(ScaningMontage);
@@ -1083,7 +1086,7 @@ void AVirusCharacter::HealPackOverlap(float DeltaTime)
 
 		float DeltaHP = 20.0f * DeltaTime;
 
-		if (CurrentHP <= MaxHP)
+		if (CurrentHP < MaxHP)
 		{
 			CurrentHP += DeltaHP;
 		}
@@ -1233,6 +1236,11 @@ void AVirusCharacter::Die()
 	{
 		AnimInstance->Montage_Play(DeathMontage);
 		AnimInstance->Montage_JumpToSection("Death");
+
+		const FString command = FString::Printf(TEXT("GameOverScreen"));
+		FOutputDeviceNull Ar;
+
+		CallFunctionByNameWithArguments(*command, Ar, NULL, true);
 	}
 }
 
