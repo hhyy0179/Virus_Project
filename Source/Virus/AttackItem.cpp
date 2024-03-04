@@ -6,6 +6,8 @@
 #include "Components/SphereComponent.h"
 #include "AIVaccineCharacter2.h"
 #include "AIProgramCharacter.h"
+#include "Kismet/GameplayStatics.h"
+#include "Sound/SoundCue.h"
 
 // Sets default values
 AAttackItem::AAttackItem():
@@ -64,6 +66,8 @@ void AAttackItem::OnSphereBeginOverlap(UPrimitiveComponent* OverlappedComponent,
 			{
 				Vaccine->TakeDamage(100.f);
 			}
+			AVirusCharacter* PlayerCharacter = Cast<AVirusCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
+			if (PlayerCharacter->MineExplodeSound) UGameplayStatics::PlaySound2D(this, PlayerCharacter->MineExplodeSound);
 
 			Destroy();
 		}
