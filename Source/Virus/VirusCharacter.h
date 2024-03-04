@@ -494,6 +494,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void EndOpen();
 
+	UFUNCTION(BlueprintCallable)
+	void EndSkill();
+
 private:
 	float HeadShotDamage = 1.0f;
 	float BodyShotDamage = 0.5f;

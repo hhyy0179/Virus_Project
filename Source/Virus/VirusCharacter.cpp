@@ -1435,3 +1435,12 @@ void AVirusCharacter::EndOpen()
 	bBoxOpening = false;
 }
 
+void AVirusCharacter::EndSkill()
+{
+	if (CombatState == ECombatState::ECS_Reloading)
+	{
+		CombatState = ECombatState::ECS_Normal;
+		EquippedWeapon->SetWeapongageStatus(EWeapongageStatus::EWS_Normal);
+	}
+}
+
