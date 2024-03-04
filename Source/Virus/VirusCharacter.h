@@ -320,6 +320,7 @@ class AVirusCharacter : public ACharacter
 	bool bWarningWidget;
 
 	bool bBoxOpening;
+
 protected:
 
 	/** Called for movement input */

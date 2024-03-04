@@ -752,7 +752,7 @@ bool AVirusCharacter::TraceUnderCrosshairs(FHitResult& OutHitResult, FVector& Ou
 
 void AVirusCharacter::TraceForItems()
 {
-	if (bShouldTraceForItems && !bBoxOpening)
+	if (bShouldTraceForItems)
 	{
 		FHitResult ItemTraceResult;
 		FVector HitLocation;
@@ -773,7 +773,7 @@ void AVirusCharacter::TraceForItems()
 				TraceHitItem->EnableCustomDepth();
 			}
 
-			if (TraceHitItemBox && TraceHitItemBox->GetPickUpWidget() && TraceHitItemBox->GetWarningWidget() && TraceHitItemBox->IsOverlappingActor(this))
+			if (TraceHitItemBox && !bBoxOpening && TraceHitItemBox->GetPickUpWidget() && TraceHitItemBox->GetWarningWidget() && TraceHitItemBox->IsOverlappingActor(this))
 			{
 				//Show Item's PickupWidget
 				
@@ -802,7 +802,7 @@ void AVirusCharacter::TraceForItems()
 			}
 
 			// We hit an AItem last frame
-			if (TraceHitItemBoxLastFrame)
+			if (TraceHitItemBoxLastFrame && !bBoxOpening)
 			{
 				if (TraceHitItemBox != TraceHitItemBoxLastFrame)
 				{
@@ -1099,7 +1099,8 @@ void AVirusCharacter::SpawnHealPackAfterAnim()
 		SpawnedHealPack->GetItemMesh()->DetachFromComponent(DetachmentTransformRules);
 
 		SpawnedHealPack->SetHealStatus(EHealStatus::EHS_Falling);
-		SpawnedHealPack->ThrowHealPack();
+	
+		SpawnedHealPack->ThrowHealPack(GetCharacterMovement()->Velocity.Size());
 	}
 	
 	GetWorldTimerManager().SetTimer(HealCoolTimer, this, &AVirusCharacter::CanUseHeal, HealCoolTime);
