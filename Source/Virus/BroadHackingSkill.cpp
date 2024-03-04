@@ -7,12 +7,13 @@
 #include "Components/SphereComponent.h"
 #include "AIVaccineCharacter2.h"
 #include "AIProgramCharacter.h"
+#include "Kismet/GameplayStatics.h"
 
 // Sets default values
 ABroadHackingSkill::ABroadHackingSkill():
-	ThrowItemTime(1.f),
+	ThrowItemTime(0.1f),
 	bFalling(false),
-	AttackTime(5.f),
+	AttackTime(2.f),
 	bAttackOverlapped(false),
 	AttackStatus(EBroadHackingSkillStatus::EBHSS_Falling)
 {
@@ -51,14 +52,21 @@ void ABroadHackingSkill::OnSphereBeginOverlap(UPrimitiveComponent* OverlappedCom
 		if (Program || Vaccine)
 		{
 			bAttackOverlapped = true;
-			if (Program)
+			if (EnemyHitVFX)
 			{
-				Program->TakeDamage(40.f);
+				if (Program)
+				{
+					Program->TakeDamage(40.f);
+					//UGameplayStatics::SpawnEmitterAttached(EnemyHitVFX, Program->GetCapsuleComponent(), NAME_None, Program->GetActorLocation(), FRotator::ZeroRotator, EAttachLocation::KeepWorldPosition);
+					UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), EnemyHitVFX, Program->GetActorTransform());
+				}
+				if (Vaccine)
+				{
+					Vaccine->TakeDamage(40.f);
+					UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), EnemyHitVFX, Vaccine->GetActorTransform());
+				}
 			}
-			if (Vaccine)
-			{
-				Vaccine->TakeDamage(40.f);
-			}
+			
 		}
 	}
 }
@@ -112,7 +120,7 @@ void ABroadHackingSkill::SetBroadHackingProperties(EBroadHackingSkillStatus Stat
 		AreaSphere->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 		AreaSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
-		AttackRange->SetVisibility(true);
+		AttackRange->SetVisibility(false);
 		AttackRange->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 		AttackRange->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 		AttackRange->SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldStatic, ECollisionResponse::ECR_Block);
@@ -132,7 +140,7 @@ void ABroadHackingSkill::SetBroadHackingProperties(EBroadHackingSkillStatus Stat
 		AreaSphere->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Overlap);
 		AreaSphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 
-		AttackRange->SetVisibility(true);
+		AttackRange->SetVisibility(false);
 		AttackRange->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 		AttackRange->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
@@ -171,10 +179,6 @@ void ABroadHackingSkill::ThrowItem(float CharacterSpeed)
 
 	//Direction in which we throw the HealPack
 	FVector ImpulseDirection = MeshRight.RotateAngleAxis(160.f, MeshForward);
-
-	float RandomRotation = { 60.f };
-	ImpulseDirection = ImpulseDirection.RotateAngleAxis(RandomRotation, FVector(0.f, 0.f, 1.f));
-	ImpulseDirection *= 100.f;
 
 	//Use MeshRight to randomize
 	GetItemMesh()->AddImpulse(ImpulseDirection);
