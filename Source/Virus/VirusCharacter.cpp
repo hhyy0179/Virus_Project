@@ -391,7 +391,7 @@ void AVirusCharacter::AttackWeapon(float DeltaTime)
 			{
 				//UE_LOG(LogTemp, Warning, TEXT("Attack"));
 
-				if (bInRealWorld) {
+				if (bInRealWorld) {	
 					const FString command = FString::Printf(TEXT("FireSoundPlay"));
 					FOutputDeviceNull Ar;
 
