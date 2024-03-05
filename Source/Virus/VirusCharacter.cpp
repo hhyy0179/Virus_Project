@@ -66,8 +66,8 @@ AVirusCharacter::AVirusCharacter() :
 	bisScanning(false),
 
 	bCanUseHeal(true),
-	HealCoolTime(5.f),
-	BroadHackinglCoolTime(5.f),
+	HealCoolTime(20.f),
+	BroadHackinglCoolTime(15.f),
 	bCanUseBroadHacking(true),
 	CombatState(ECombatState::ECS_Normal),
 	DefenseStatus(EDefenseStatus::EDS_DeActivate),
