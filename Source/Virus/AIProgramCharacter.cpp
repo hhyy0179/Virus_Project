@@ -19,6 +19,7 @@
 #include "AIAllyCharacter.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "HackingGaugeManager.h"
+#include "Misc/OutputDeviceNull.h"
 
 AAIProgramCharacter::AAIProgramCharacter() :
 	MaxHealth(50.0f),
@@ -129,6 +130,8 @@ void AAIProgramCharacter::ShowHealthBar_Implementation()
 
 void AAIProgramCharacter::Die()
 {
+	GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Program Die"));
+
 	StopRoaming = true;
 	isDying = true;
 
@@ -152,26 +155,30 @@ void AAIProgramCharacter::Die()
 
 void AAIProgramCharacter::CloneActor()
 {
+	const FString command = FString::Printf(TEXT("SpawnAlly"));
+	FOutputDeviceNull Ar;
 
-	TSubclassOf<AAIAllyCharacter> NewActorClass = AAIAllyCharacter::StaticClass();
-	UObject* ClassPackage = ANY_PACKAGE;
+	CallFunctionByNameWithArguments(*command, Ar, NULL, true);
+	/*GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Call Clone Actor"));
+	FTransform ActorTransform = this->GetActorTransform();
+	this->SetActorLocation(FVector(0.f, 0.f, 0.f));
 
-	UObject* SpawnActor = Cast<UObject>(StaticLoadObject(UObject::StaticClass(), NULL, TEXT("/Game/_VirusGame/AI/AIAllyCharacter/BP_AIAllyCharacter.BP_AIAllyCharacter")));
-	UBlueprint* GeneratedBP = Cast<UBlueprint>(SpawnActor);
-
-	if (this && SpawnActor)
+	if (SpawnAllyBP)
 	{
-		FTransform ActorTransform = this->GetActorTransform();
-		this->SetActorLocation(FVector(0.f, 0.f, 0.f));
+		GetWorld()->SpawnActor<AAIAllyCharacter>(SpawnAllyBP->GeneratedClass, ActorTransform);
 
 		GetWorld()->DestroyActor(this);
-
-		AAIAllyCharacter* NewActor = GetWorld()->SpawnActor<AAIAllyCharacter>(GeneratedBP->GeneratedClass, ActorTransform);
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("SpawnToActor Class is None"));
-	}
+		if (!SpawnAllyBP) {
+			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("SpawnAllyBP is not exist"));
+		}
+		else {
+			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("I Don't Know Reason"));
+
+		}
+	}*/
 }
 
 void AAIProgramCharacter::Tick(float DeltaTime)

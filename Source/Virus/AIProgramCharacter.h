@@ -44,6 +44,9 @@ public:
 	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"))
 	class USoundCue* ImpactSound;
 
+	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = Spawn, meta = (AllowPrivateAccess = "true"))
+	class UBlueprint* SpawnAllyBP;
+
 	UWidgetComponent* GetWidgetComponentFromActor();
 
 	UWidgetComponent* HPBarWidgetComponent = nullptr;
