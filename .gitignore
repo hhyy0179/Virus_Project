@@ -72,7 +72,6 @@ Plugins/*/Intermediate/*
 
 # Cache files for the editor to use
 DerivedDataCache/*
-Content/IMC_Default.T3D
 Content/__ExternalActors__
 Content/_GENERATED
 Content/Character
@@ -82,7 +81,4 @@ Content/LevelPrototyping
 Content/ModSci_Engineer
 Content/ModSci_EngiProps
 Content/ModSciInteriors
-Content/VirusMap.umap
-Content/Basicmap.umap
 Content/_VirusGame/Maps/Main.umap
-Content/Basicmap.umap
