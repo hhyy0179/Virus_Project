@@ -15,6 +15,9 @@ class VIRUS_API UVirusGameInstance : public UGameInstance
 	GENERATED_BODY()
 	
 public:
+	UVirusGameInstance();
+
+public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	float MouseSensitivity = 0.9f;
 
