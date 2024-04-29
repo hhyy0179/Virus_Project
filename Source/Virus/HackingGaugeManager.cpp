@@ -7,8 +7,6 @@
 #include "AIAllyCharacter.h"
 #include "Kismet/GameplayStatics.h"
 
-FOutputDeviceNull Ar;
-
 // Sets default values
 AHackingGaugeManager::AHackingGaugeManager()
 {
@@ -90,6 +88,7 @@ void AHackingGaugeManager::ControlGauge(float Value)
 {
 	const FString command = FString::Printf(TEXT("UpdatePercent %f"), Value);
 
+	FOutputDeviceNull Ar;
 	HackingGauageWidget->CallFunctionByNameWithArguments(*command, Ar, NULL, true);
 
 	if (Value == 100) {
